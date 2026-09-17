@@ -422,6 +422,15 @@ a fixed column adds a hidden `tr.ant-table-measure-row`, so use `rows(page)`;
 use `facet(page, …)`; and an icon inside a button carries its own `aria-label`,
 so address buttons by role and exact name.
 
+**The Kafka integration test replays `video.done` from the beginning.** It
+creates its consumer *after* publishing — a fully mocked pipeline finishes
+before a new consumer has joined — so it reads from `earliest` and filters by
+id, which is the difference between a deterministic test and a coin flip. The
+cost is that it gets slower as the topic grows: it failed once, on a 120s
+timeout, against a topic holding several thousand events from the load runs
+before the burst was capped. It passes in 10–30s against a topic of normal
+size. If it ever times out, the topic is the first place to look.
+
 **Give the E2E suite an idle stack.** It passes 147/147 consistently on its
 own, in about 45 seconds. Started immediately after the Python suite — while
 the seven workers are still draining the load test's submissions — one run
