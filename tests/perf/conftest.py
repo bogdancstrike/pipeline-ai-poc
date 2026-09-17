@@ -65,17 +65,40 @@ def reseed():
         seed.seed(CORPUS_SIZE)
 
 
+class Submissions:
+    """The id prefix a test submits under, and how many it submitted.
+
+    The count is what lets the sweep know when it is finished: the pipeline is
+    asynchronous, and "no new records for a few seconds" means nothing when the
+    workers are a minute behind.
+
+    The prefix carries a token unique to this run, because the ids must be too.
+    Reusing `load-1` between runs let a sweep count rows the *previous* run had
+    left, decide it was done, and leave this run's behind — which is how 207 of
+    207 were removed and 207 were still there afterwards.
+    """
+
+    def __init__(self):
+        import uuid
+
+        self.prefix = f"load-{uuid.uuid4().hex[:8]}-"
+        self.count = 0
+
+    def id(self) -> str:
+        self.count += 1
+        return f"{self.prefix}{self.count}"
+
+
 @pytest.fixture()
 def submitted_records():
-    """The id prefix for records a test creates by submitting videos.
+    """Hand out ids, then delete every record they became.
 
-    Returns the prefix and deletes everything under it afterwards. Submitting
-    to `/pipeline/analyze` puts a message on `video.in`, and with every service
-    mocked the seven workers turn it into a real row in seconds — thousands of
-    them, if the test is a burst. They are not the corpus and must not be left
-    in it.
+    Submitting to `/pipeline/analyze` puts a message on `video.in`, and with
+    every service mocked the seven workers turn it into a real row. They are
+    not the corpus and must not be left in it.
     """
-    prefix = "load-"
-    yield prefix
+    submissions = Submissions()
+    yield submissions
 
-    print(f"\n[load] removed {sweep(prefix)} records submitted by this test")
+    removed = sweep(submissions.prefix, expect=submissions.count, timeout=180)
+    print(f"\n[load] removed {removed} of {submissions.count} records submitted by this test")

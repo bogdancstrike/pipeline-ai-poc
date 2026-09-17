@@ -220,7 +220,7 @@ synchronous Flask app behind a thread pool.
 [load] search x24      567 reqs / 5.2s   109 req/s  median=220.7ms p99=289.4ms  fail=0.0%
 [load] dashboard x12  1318 reqs / 5.0s   262 req/s  median= 45.3ms p99= 76.0ms  fail=0.0%
 [load] mixed x16      1393 reqs / 5.0s   277 req/s  median= 52.7ms p99=135.7ms  fail=0.0%
-[load] submit x8      2456 reqs / 3.0s   816 req/s  median=  9.3ms p99= 18.2ms  fail=0.0%
+[load] submit x8        57 reqs / 3.0s    19 req/s  median=  8.7ms p99= 12.4ms  fail=0.0%
 [load] export x4        62 reqs / 4.1s    15 req/s  median=263.5ms p99=331.0ms  fail=0.0%
 [load] health under load (while 8 threads hammer /statistics)  p95=36.6ms  fail=0.0%
 
@@ -424,6 +424,25 @@ so address buttons by role and exact name.
 
 **The E2E suite leaves the corpus behind.** That is deliberate — it makes the
 next run immediate. `python tests/support/seed.py clear` removes it.
+
+**A saturated run can leave stragglers.** Submitting a video answers in 9ms and
+leaves seven workers busy *after* the response, so the burst test's records
+arrive long after the requests do. It submits under a run-unique prefix, counts
+what it handed out, and sweeps until it has removed that many or 180 seconds
+pass — and under a full run, with the app container serving everything else, it
+can still hit the deadline. The burst is capped at 50 for this reason: fifty
+concurrent submissions prove what the test is about (a shared producer under
+contention accepts every one) as well as a thousand would, and the cleanup
+finishes. If anything is left over:
+
+```bash
+python tests/support/seed.py clear --prefix load-
+python tests/support/seed.py clear --prefix probe-
+python tests/support/seed.py clear --prefix it-
+```
+
+Nothing asserts against those prefixes, so stragglers are untidy rather than
+wrong — but they are records in a corpus somebody may be looking at.
 
 ---
 

@@ -32,7 +32,7 @@ def sweep_probe_records():
 
     from integration.conftest import sweep
 
-    sweep("probe-")
+    sweep("probe-", expect=0, timeout=90)
 
 
 # ── the wiring ───────────────────────────────────────────────────────────

@@ -168,25 +168,24 @@ def test_submitting_many_videos_at_once_is_accepted(warm, submitted_records):
     This one really does run the pipeline: every accepted submission becomes a
     record, which is why the ids are prefixed and the fixture deletes them.
     """
-    import itertools
-
-    counter = itertools.count()
-
     def submit():
         return live.post(
             "/pipeline/analyze",
-            {"path": "/video/migrants.mp4", "id": f"{submitted_records}{next(counter)}"},
+            {"path": "/video/migrants.mp4", "id": submitted_records.id()},
             timeout=30,
         )
 
-    # Capped: each accepted submission costs seven workers a unit of work, and
-    # three unbounded seconds of this queues thousands of messages that the
-    # next test would wait behind.
-    result = show(drive("submit x8", submit, concurrency=8, seconds=3, max_requests=200))
+    # Capped low on purpose. Each accepted submission costs seven workers a
+    # unit of work *after* the response, so an unbounded burst queues thousands
+    # of messages that the next test waits behind and the cleanup chases for
+    # minutes. Fifty concurrent submissions prove what this is about — that a
+    # shared producer under contention accepts every one — as well as a
+    # thousand would.
+    result = show(drive("submit x8", submit, concurrency=8, seconds=3, max_requests=50))
 
     # Up to one extra per thread: the cap is checked before a request, and the
     # ones already in flight finish.
-    assert 200 <= result.requests <= 200 + 8
+    assert 50 <= result.requests <= 50 + 8
     assert result.errors == []
     assert set(result.statuses) <= {202}, result.statuses
 

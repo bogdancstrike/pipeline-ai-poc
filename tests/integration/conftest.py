@@ -63,30 +63,42 @@ def _database_on():
         prompt_store._cache = {}
 
 
-def sweep(prefix: str, *, settle: float = 3.0, quiet_rounds: int = 2, rounds: int = 40) -> int:
+def sweep(prefix: str, *, expect: int = 0, timeout: float = 120.0, quiet_rounds: int = 3) -> int:
     """Delete every record under `prefix`, waiting for the pipeline to drain.
 
     Submitting a video answers in milliseconds and leaves seven workers busy,
-    so a single DELETE runs ahead of the rows it is meant to remove. One empty
-    sweep is not enough either — it usually means the first message has not
-    landed yet. So: settle, then sweep until `quiet_rounds` in a row come back
-    with nothing.
+    so a single DELETE runs ahead of the rows it is meant to remove — and
+    waiting for "a few quiet rounds" is not enough either. Under a full suite
+    run the app container is serving everything else, the workers fall behind,
+    and a sweep that waits ten seconds for silence gets it: the records land
+    a minute later, after it has gone.
+
+    So `expect` is the number that were submitted, and the sweep keeps going
+    until it has removed that many. Without one it falls back to waiting for
+    `quiet_rounds` empty passes, which is right for a caller that does not know
+    how many to expect.
     """
     import time
 
     from support import seed
 
-    time.sleep(settle)
+    deadline = time.monotonic() + timeout
     removed = 0
     quiet = 0
-    for _ in range(rounds):
+
+    while time.monotonic() < deadline:
         with _database_on():
             gone = seed.clear(prefix)
         removed += gone
         quiet = quiet + 1 if gone == 0 else 0
-        if quiet >= quiet_rounds:
+
+        if expect:
+            if removed >= expect:
+                break
+        elif quiet >= quiet_rounds:
             break
         time.sleep(1.5)
+
     return removed
 
 
