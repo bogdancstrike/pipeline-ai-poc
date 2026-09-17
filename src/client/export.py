@@ -41,6 +41,27 @@ from client.errors import ValidationError
 
 FORMATS = ("csv", "json", "xlsx")
 
+
+def available_formats() -> tuple[str, ...]:
+    """The formats this deployment can actually produce.
+
+    `xlsx` needs openpyxl. It is declared in requirements.txt, but a menu built
+    from `FORMATS` on a deployment that dropped it offers a button that answers
+    400 every time — so what is advertised is what imports, checked once.
+    """
+    global _AVAILABLE
+    if _AVAILABLE is None:
+        try:
+            import openpyxl  # noqa: F401
+        except ImportError:
+            _AVAILABLE = tuple(f for f in FORMATS if f != "xlsx")
+        else:
+            _AVAILABLE = FORMATS
+    return _AVAILABLE
+
+
+_AVAILABLE: tuple[str, ...] | None = None
+
 #: Rows above which an export must become a background job (§23) rather than a
 #: request somebody's browser is holding open. Chosen to be comfortably longer
 #: than a spreadsheet anybody opens and comfortably shorter than a request that

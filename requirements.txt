@@ -23,3 +23,10 @@ pytest-timeout>=2.2.0
 # explorer/dashboard endpoints read it back.
 SQLAlchemy>=2.0.30
 psycopg2-binary>=2.9.9
+
+# The third export format. `client/export.py` has always assumed this was
+# declared ("pragma: no cover - dependency is declared"); it was not, so
+# `/client/meta` advertised xlsx and every XLSX export answered 400. The
+# advertised list is now filtered by what actually imports, so a deployment
+# that drops this still shows an honest menu instead of a broken button.
+openpyxl>=3.1

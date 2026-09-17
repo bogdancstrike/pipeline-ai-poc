@@ -305,7 +305,7 @@ def meta(app, operation, request, **kwargs) -> Answer:
             "today", "yesterday", "last_7_days", "last_30_days", "last_90_days",
             "current_month", "previous_month", "current_year", "custom",
         ],
-        "export_formats": list(export_module.FORMATS),
+        "export_formats": list(export_module.available_formats()),
         "page_sizes": [10, 25, 50, 100, 200],
     }, 200
 
