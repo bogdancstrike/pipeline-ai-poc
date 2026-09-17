@@ -22,6 +22,7 @@ from integration.conftest import (  # noqa: E402,F401
     expected,
     seeded_only,
     stack,
+    sweep,
 )
 
 from support import live  # noqa: E402
@@ -77,19 +78,4 @@ def submitted_records():
     prefix = "load-"
     yield prefix
 
-    import time
-
-    from support import seed
-
-    # The pipeline is asynchronous, so a single sweep leaves behind whatever
-    # the workers were still writing when it ran. Sweep until one comes back
-    # empty — that is the queue having drained, not a guess at how long it takes.
-    removed = 0
-    for _ in range(30):
-        with _database_on():
-            gone = seed.clear(prefix)
-        removed += gone
-        if gone == 0:
-            break
-        time.sleep(2)
-    print(f"\n[load] removed {removed} records submitted by this test")
+    print(f"\n[load] removed {sweep(prefix)} records submitted by this test")

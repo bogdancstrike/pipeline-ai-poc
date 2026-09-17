@@ -63,6 +63,33 @@ def _database_on():
         prompt_store._cache = {}
 
 
+def sweep(prefix: str, *, settle: float = 3.0, quiet_rounds: int = 2, rounds: int = 40) -> int:
+    """Delete every record under `prefix`, waiting for the pipeline to drain.
+
+    Submitting a video answers in milliseconds and leaves seven workers busy,
+    so a single DELETE runs ahead of the rows it is meant to remove. One empty
+    sweep is not enough either — it usually means the first message has not
+    landed yet. So: settle, then sweep until `quiet_rounds` in a row come back
+    with nothing.
+    """
+    import time
+
+    from support import seed
+
+    time.sleep(settle)
+    removed = 0
+    quiet = 0
+    for _ in range(rounds):
+        with _database_on():
+            gone = seed.clear(prefix)
+        removed += gone
+        quiet = quiet + 1 if gone == 0 else 0
+        if quiet >= quiet_rounds:
+            break
+        time.sleep(1.5)
+    return removed
+
+
 @pytest.fixture(scope="session", autouse=True)
 def stack():
     """Skip the whole suite unless the stack is up, then seed the corpus."""

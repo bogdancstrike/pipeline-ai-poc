@@ -30,20 +30,9 @@ def sweep_probe_records():
     """
     yield
 
-    import sys
-    import time
-    from pathlib import Path
+    from integration.conftest import sweep
 
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from integration.conftest import _database_on
-    from support import seed
-
-    for _ in range(15):
-        with _database_on():
-            gone = seed.clear("probe-")
-        if gone == 0:
-            break
-        time.sleep(1)
+    sweep("probe-")
 
 
 # ── the wiring ───────────────────────────────────────────────────────────

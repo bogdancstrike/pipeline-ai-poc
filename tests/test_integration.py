@@ -51,25 +51,15 @@ def sweep_records():
     yield
 
     import sys
-    import time
     from pathlib import Path
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
     try:
-        from integration.conftest import _database_on
-        from support import seed
+        from integration.conftest import sweep
     except Exception:  # pragma: no cover - the helpers are optional
         return
 
-    for _ in range(10):
-        try:
-            with _database_on():
-                gone = seed.clear("it-")
-        except Exception:  # pragma: no cover - no database here is fine
-            return
-        if gone == 0:
-            break
-        time.sleep(1)
+    sweep("it-")
 
 
 @pytest.fixture(scope="module")
