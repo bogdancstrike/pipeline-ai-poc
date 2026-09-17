@@ -422,6 +422,12 @@ a fixed column adds a hidden `tr.ant-table-measure-row`, so use `rows(page)`;
 use `facet(page, …)`; and an icon inside a button carries its own `aria-label`,
 so address buttons by role and exact name.
 
+**Give the E2E suite an idle stack.** It passes 147/147 consistently on its
+own, in about 45 seconds. Started immediately after the Python suite — while
+the seven workers are still draining the load test's submissions — one run
+reported 146. Nothing failed; the browser suite simply shares a Flask process
+with a backlog. Run it first, or give the pipeline a minute.
+
 **The E2E suite leaves the corpus behind.** That is deliberate — it makes the
 next run immediate. `python tests/support/seed.py clear` removes it.
 
