@@ -350,3 +350,141 @@ def test_a_saved_search_needs_a_name(db):
     with db.session_scope() as session:
         with pytest.raises(ValidationError):
             saved_searches.create(session, {"payload": {}})
+
+
+# ------------------------------------------------------------------ prompts --
+
+def test_the_prompt_files_seed_the_database_once(db):
+    """The .txt files are the default; a row is created from each, once."""
+    from client import models, prompt_store
+
+    with db.session_scope() as session:
+        assert prompt_store.seed(session) == 3
+    with db.session_scope() as session:
+        # Seeding again must not overwrite: a default does not undo an edit.
+        assert prompt_store.seed(session) == 0
+        rows = session.query(models.Prompt).all()
+
+    assert sorted(row.name for row in rows) == ["entities", "sentiment", "summary"]
+    assert all(row.text == row.default_text for row in rows)
+
+
+def test_an_edited_prompt_is_what_the_worker_sends(db, monkeypatch):
+    """`prompts.load()` prefers the stored copy — that is the whole feature."""
+    import prompts
+    from client import prompt_store
+
+    monkeypatch.setattr(Config, "PROMPTS_FROM_DB", True)
+    shipped = prompts.from_file("summary.txt")
+    prompt_store.invalidate()
+
+    with db.session_scope() as session:
+        prompt_store.seed(session)
+        prompt_store.save(session, "summary", "Summarise in one sentence.", updated_by="ana")
+
+    assert prompts.load("summary.txt") == "Summarise in one sentence."
+    # The file is untouched, and still reachable for the reset.
+    assert prompts.from_file("summary.txt") == shipped
+
+    with db.session_scope() as session:
+        prompt_store.reset(session, "summary")
+    assert prompts.load("summary.txt") == shipped
+
+
+def test_a_saved_prompt_takes_effect_without_a_restart(db, monkeypatch):
+    """Saving drops this process's cache, so the next call reads the new text."""
+    import prompts
+    from client import prompt_store
+
+    monkeypatch.setattr(Config, "PROMPTS_FROM_DB", True)
+    with db.session_scope() as session:
+        prompt_store.seed(session)
+
+    prompts.load("entities.txt")  # warm the cache
+    with db.session_scope() as session:
+        prompt_store.save(session, "entities", "One entity per line.")
+    assert prompts.load("entities.txt") == "One entity per line."
+
+
+def test_prompt_edits_are_versioned_and_validated(db):
+    from client.errors import NotFoundError, ValidationError
+    from client import prompt_store
+
+    with db.session_scope() as session:
+        prompt_store.seed(session)
+        first = prompt_store.save(session, "sentiment", "One word.")
+        again = prompt_store.save(session, "sentiment", "One word.")
+        changed = prompt_store.save(session, "sentiment", "One word, in capitals.")
+
+    # An unchanged save does not burn a version; a changed one does.
+    assert (first["version"], again["version"], changed["version"]) == (2, 2, 3)
+
+    with db.session_scope() as session:
+        with pytest.raises(ValidationError):
+            prompt_store.save(session, "summary", "   ")
+        with pytest.raises(NotFoundError):
+            prompt_store.save(session, "not-a-prompt", "x")
+
+
+def test_the_pipeline_survives_the_prompt_database_being_down(monkeypatch):
+    """A prompt outage must cost the edits, never the video."""
+    import prompts
+    from client import prompt_store
+
+    monkeypatch.setattr(Config, "DB_ENABLED", False)
+    prompt_store.invalidate()
+    assert prompts.load("summary.txt") == prompts.from_file("summary.txt")
+
+
+# -------------------------------------------------------------------- media --
+
+def test_a_video_is_found_by_the_tail_of_its_path(tmp_path, monkeypatch):
+    """The AI host's root and ours differ; the file name alone is not enough."""
+    from client import media
+
+    mounted = tmp_path / "videos"
+    (mounted / "Inmigracion").mkdir(parents=True)
+    video = mounted / "Inmigracion" / "1abe85d1.mp4"
+    video.write_bytes(b"\x00\x00\x00\x18ftypmp42")
+    monkeypatch.setattr(Config, "VIDEO_SEARCH_DIRS", [str(mounted)])
+
+    # What the record holds is the AI host's path.
+    assert media.locate("/video/Inmigracion/1abe85d1.mp4") == str(video)
+    # And the local path itself still works.
+    assert media.locate(str(video)) == str(video)
+    assert media.locate("/video/Inmigracion/missing.mp4") is None
+
+
+def test_only_videos_inside_a_search_dir_are_served(tmp_path, monkeypatch):
+    from client import media
+
+    mounted = tmp_path / "videos"
+    mounted.mkdir()
+    outside = tmp_path / "secret.mp4"
+    outside.write_bytes(b"x")
+    (mounted / "notes.txt").write_text("not a video")
+    monkeypatch.setattr(Config, "VIDEO_SEARCH_DIRS", [str(mounted)])
+
+    # Absolute path outside the mount: refused even though the file exists.
+    assert media.locate(str(outside)) is None
+    # A symlink that leads out of the mount: refused after realpath.
+    link = mounted / "escape.mp4"
+    link.symlink_to(outside)
+    assert media.locate(str(link)) is None
+    # Not a video extension: refused.
+    assert media.locate(str(mounted / "notes.txt")) is None
+
+
+def test_a_sibling_directory_is_not_inside_the_mount(tmp_path, monkeypatch):
+    """`/app/videos-secret` starts with `/app/videos` as a string only."""
+    from client import media
+
+    mounted = tmp_path / "videos"
+    mounted.mkdir()
+    sibling = tmp_path / "videos-secret"
+    sibling.mkdir()
+    hidden = sibling / "x.mp4"
+    hidden.write_bytes(b"x")
+    monkeypatch.setattr(Config, "VIDEO_SEARCH_DIRS", [str(mounted)])
+
+    assert media.locate(str(hidden)) is None
