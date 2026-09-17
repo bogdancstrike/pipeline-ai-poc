@@ -24,7 +24,14 @@ from framework.commons.logger import logger
 
 _engine = None
 _maker: Optional[sessionmaker] = None
-_lock = threading.Lock()
+#: Re-entrant on purpose. `create_schema()` and `_sessions()` both take this
+#: lock and then call `engine()`, which takes it again to build the engine on
+#: first use. With a plain Lock that is a deadlock, and it is not hypothetical:
+#: whichever of the three runs first in a cold process hangs its thread for
+#: ever. Today `main.py` calls `available()` — and so `engine()` — at boot,
+#: which fills `_engine` and makes every later re-entry short-circuit before
+#: the lock; a worker process that skipped that step would simply stop.
+_lock = threading.RLock()
 _schema_ready = False
 
 

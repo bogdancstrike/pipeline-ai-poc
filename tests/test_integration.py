@@ -110,18 +110,29 @@ def test_one_video_fans_out_aggregates_twice_and_produces_a_record(etl_thread, t
     assert event["status"] == "analysed"
     assert event["persons"] == 1
     assert event["entities"] == 5
-    assert event["sentiment"] == "negative"
+    assert event["sentiment"] == "NEGATIVE"
     assert event["output_file"]
 
 
-def test_submitting_the_same_path_twice_needs_two_ids(etl_thread):
-    """Both aggregators key on `id` — two runs must not share one."""
+def test_the_same_path_twice_is_one_id_and_an_explicit_id_keeps_both(etl_thread):
+    """The run is named after the file, so re-submitting one replaces its record.
+
+    That is the documented contract of `publish_video`: the file name is the
+    identifier the submitting systems already use, and both aggregators key on
+    it — so two submissions of the same path are deliberately the same run.
+    Keeping both answers is what an explicit `video_id` is for.
+    """
     import publisher
 
     first = publisher.publish_video(path="/video/migrants.mp4")
     second = publisher.publish_video(path="/video/migrants.mp4")
-    assert first["id"] != second["id"]
+    assert first["id"] == second["id"] == "migrants.mp4"
 
-    for submission in (first, second):
+    named = publisher.publish_video(
+        path="/video/migrants.mp4", video_id=f"it-{uuid.uuid4().hex[:8]}"
+    )
+    assert named["id"] != first["id"]
+
+    for submission in (first, named):
         event = _await_done(submission["id"])
         assert event.get("status") == "analysed", f"{submission['id']} did not complete"

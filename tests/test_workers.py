@@ -237,7 +237,7 @@ def test_raw_bodies_can_be_left_out(branches, merge, tmp_path, monkeypatch):
     for entry in record["enrichment"].values():
         assert "response" not in entry
     # The parsed values survive.
-    assert record["enrichment"]["sentiment"]["text"] == "negative"
+    assert record["enrichment"]["sentiment"]["text"] == "NEGATIVE"
 
 
 def test_a_failing_service_still_produces_a_record(branches, merge, tmp_path, monkeypatch):

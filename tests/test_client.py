@@ -315,7 +315,10 @@ def test_the_export_carries_the_same_question(db, record):
         text = "".join(csv_lines(rows, columns))
 
     lines = text.strip().splitlines()
-    assert lines[0] == "Video,Sentiment,Entities"
+    # csv_lines opens with a UTF-8 BOM so Excel on Windows does not read the
+    # file as the local codepage — it belongs to the file, not to the header.
+    assert lines[0].lstrip("\ufeff") == "Video,Sentiment,Entities"
+    assert text.startswith("\ufeff")
     assert lines[1].startswith("migrants.mp4,NEGATIVE,2")
 
 

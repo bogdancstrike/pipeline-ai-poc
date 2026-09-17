@@ -114,7 +114,7 @@ def test_running_the_final_aggregator_runs_the_whole_pipeline(seed):
         "id", "name", "path", "submitted_at", "analysed_at", "enrichment", "errors",
     }
     assert record["enrichment"]["face_match"]["persons"] == mock_responses.MOCK_PERSONS
-    assert record["enrichment"]["sentiment"]["text"] == "negative"
+    assert record["enrichment"]["sentiment"]["text"] == "NEGATIVE"
     assert record["errors"] == {}
 
 
