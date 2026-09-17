@@ -178,12 +178,15 @@ def records_export(app, operation, request, **kwargs):
     from a generator that owns its own session, so the first byte leaves before
     the last row is fetched.
     """
-    payload = _body()
-    fmt = export_module.parse_format(payload.get("format"), default="csv")
-    columns = explorer_service.export_columns(payload.get("columns"))
-    statement = explorer_service.export_statement(payload)
-
     try:
+        # Inside the guard, not before it: an unknown format, an undeclared
+        # column and a malformed condition tree are all client mistakes, and
+        # parsing them outside answered 500 for what the reader could fix.
+        payload = _body()
+        fmt = export_module.parse_format(payload.get("format"), default="csv")
+        columns = explorer_service.export_columns(payload.get("columns"))
+        statement = explorer_service.export_statement(payload)
+
         export_module.refuse_if_truncated(statement, fmt=fmt, what="records")
         rows = export_module.stream_rows(statement, limit=export_module.limit_for(fmt))
         return export_module.response(rows, columns, fmt=fmt, stem="video-records")
