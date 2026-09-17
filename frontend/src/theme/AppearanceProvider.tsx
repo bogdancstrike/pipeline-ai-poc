@@ -26,7 +26,7 @@ import { STORAGE_KEYS } from "@/config";
 
 import { buildTheme, cssVariables, resolveAppearance, type Appearance } from "./antd";
 import { buildChartTheme } from "./echarts";
-import { LAYOUT, type Density } from "./tokens";
+import { type Density } from "./tokens";
 
 interface AppearanceContextValue {
   appearance: Appearance;
@@ -34,9 +34,20 @@ interface AppearanceContextValue {
   mode: "light" | "dark";
   density: Density;
   setAppearance: (next: Appearance) => void;
-  setDensity: (next: Density) => void;
   chartTheme: ReturnType<typeof buildChartTheme>;
 }
+
+/**
+ * The one spacing this application has.
+ *
+ * Density used to be a setting. It is not one here: a control that every
+ * reader leaves alone is a control that costs a place in the header and a
+ * decision on first use, and the roomy scale is the one this app is designed
+ * at — record prose, chart cards and a table of long video names all want the
+ * air. The token scale itself still supports the other two (`DENSITY` in
+ * tokens.ts); nothing in the UI selects them.
+ */
+const DENSITY_CHOICE: Density = "comfortable";
 
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 
@@ -58,26 +69,17 @@ function write(key: string, value: string): void {
   }
 }
 
-/** Below this the app is being held, not pointed at (§56). */
-const HANDHELD = `(max-width: ${LAYOUT.breakpoints.mobile - 1}px)`;
-
-function isHandheld(): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!window.matchMedia) return false;
-  return window.matchMedia(HANDHELD).matches;
-}
-
 export function AppearanceProvider({ children }: { children: ReactNode }) {
   const [appearance, setAppearanceState] = useState<Appearance>(() =>
     read(STORAGE_KEYS.appearance, "system", ["light", "dark", "system"] as const),
   );
-  const [density, setDensityState] = useState<Density>(() =>
-    read(STORAGE_KEYS.density, "middle", ["compact", "middle", "comfortable"] as const),
-  );
+  // Fixed, and deliberately not read back from localStorage: a reader who
+  // chose `compact` before the switch was removed would otherwise be stuck
+  // with it and have no way to leave.
+  const density: Density = DENSITY_CHOICE;
   const [systemMode, setSystemMode] = useState<"light" | "dark">(() =>
     resolveAppearance("system"),
   );
-  const [handheld, setHandheld] = useState<boolean>(() => isHandheld());
 
   // Follow the OS while the setting is `system`, and keep following it — a
   // laptop that switches to dark at sunset should take the app with it.
@@ -92,40 +94,13 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     return () => query.removeEventListener("change", listener);
   }, []);
 
-  // And follow the *width*, for the same reason: a control sized for a mouse
-  // is not a control a thumb can hit.
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!window.matchMedia) return;
-    const query = window.matchMedia(HANDHELD);
-    const listener = (event: MediaQueryListEvent) => setHandheld(event.matches);
-    query.addEventListener("change", listener);
-    return () => query.removeEventListener("change", listener);
-  }, []);
-
   const mode = appearance === "system" ? systemMode : appearance;
 
-  /**
-   * The density actually rendered, which on a phone is not always the one the
-   * reader chose (§56).
-   *
-   * `compact` is a *mouse* setting: 28px controls and 21px small buttons, which
-   * is right for somebody comparing forty rows with a pointer and unusable
-   * with a thumb — WCAG 2.2 asks for 24×24 as a minimum and a compact phone
-   * misses it. So a handheld width floors the density at `middle` while
-   * leaving the stored preference alone: the reader's choice still applies on
-   * the machine they made it on, and the preferences page still shows it.
-   */
-  const rendered: Density = handheld && density === "compact" ? "middle" : density;
+  const rendered: Density = density;
 
   const setAppearance = useCallback((next: Appearance) => {
     setAppearanceState(next);
     write(STORAGE_KEYS.appearance, next);
-  }, []);
-
-  const setDensity = useCallback((next: Density) => {
-    setDensityState(next);
-    write(STORAGE_KEYS.density, next);
   }, []);
 
   // The stylesheet reads these; AntD components read the theme below. Both are
@@ -148,8 +123,8 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
   const chartTheme = useMemo(() => buildChartTheme(mode, rendered), [mode, rendered]);
 
   const value = useMemo(
-    () => ({ appearance, mode, density, setAppearance, setDensity, chartTheme }),
-    [appearance, mode, density, setAppearance, setDensity, chartTheme],
+    () => ({ appearance, mode, density, setAppearance, chartTheme }),
+    [appearance, mode, density, setAppearance, chartTheme],
   );
 
   return (

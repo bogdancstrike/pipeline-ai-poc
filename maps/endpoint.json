@@ -140,7 +140,7 @@
         "type": "dict",
         "args": {
           "required": false,
-          "description": "The advanced query builder's nested AND/OR tree, compiled to SQL by client/rules.py.",
+          "description": "The advanced query builder's nested AND/OR tree, compiled to SQL by client/rules.py. OMIT THIS KEY when there is no tree — Flask-RESTX types a dict field as `object` and rejects an explicit null with a 400.",
           "example": {
             "type": "group",
             "conjunction": "AND",
@@ -241,7 +241,7 @@
         "type": "dict",
         "args": {
           "required": false,
-          "description": "As /client/records/search."
+          "description": "As /client/records/search — omit the key rather than sending null."
         }
       },
       "columns": {

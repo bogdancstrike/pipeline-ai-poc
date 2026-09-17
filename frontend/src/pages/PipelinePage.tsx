@@ -7,12 +7,16 @@
  * "which prompt produced this summary?" without a shell on the container.
  */
 
+import { PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Card, Col, Descriptions, Row, Table, Tag } from "antd";
+import { App, Alert, Button, Card, Col, Descriptions, Row, Table, Tag } from "antd";
+import { useState } from "react";
 
 import { api } from "@/api/client";
 import { metaApi } from "@/api/meta";
 import { PageHeader } from "@/app/AppShell";
+import { AnalyzeModal } from "@/components/pipeline/AnalyzeModal";
+import { WorkerRunner } from "@/components/pipeline/WorkerRunner";
 import { errorText } from "@/lib/errors";
 import { ago } from "@/lib/time";
 
@@ -27,6 +31,9 @@ interface PipelineConfig {
 }
 
 export default function PipelinePage() {
+  const { message } = App.useApp();
+  const [analyzeOpen, setAnalyzeOpen] = useState(false);
+
   const config = useQuery({
     queryKey: ["pipeline-config"],
     queryFn: ({ signal }) => api.get<PipelineConfig>("/pipeline/config", { signal }),
@@ -47,7 +54,12 @@ export default function PipelinePage() {
     <div className="page">
       <PageHeader
         title="Pipeline"
-        blurb="Where each AI service lives, which calls are mocked, and what the client app is reading."
+        blurb="Submit a video, run a single worker, and see where each AI service lives."
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAnalyzeOpen(true)}>
+            Analyse a video
+          </Button>
+        }
       />
 
       {config.error && (
@@ -58,6 +70,8 @@ export default function PipelinePage() {
           description={errorText(config.error, { action: "read the pipeline configuration" })}
         />
       )}
+
+      <WorkerRunner />
 
       <Row gutter={[12, 12]}>
         <Col xs={24} xl={14}>
@@ -114,6 +128,15 @@ export default function PipelinePage() {
           </Card>
         </Col>
       </Row>
+
+      <AnalyzeModal
+        open={analyzeOpen}
+        onClose={() => setAnalyzeOpen(false)}
+        onSubmitted={(id) =>
+          message.success(`Submitted as ${id} — watch it land on the Records page.`)
+        }
+      />
     </div>
   );
 }
+

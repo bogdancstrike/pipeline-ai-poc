@@ -9,7 +9,6 @@ import {
   BarChartOutlined,
   DashboardOutlined,
   DatabaseOutlined,
-  SaveOutlined,
   VideoCameraOutlined,
 } from "@ant-design/icons";
 import type { ReactNode } from "react";
@@ -36,14 +35,8 @@ export const NAVIGATION: NavItem[] = [
     path: "/records",
     label: "Records",
     icon: <VideoCameraOutlined />,
-    blurb: "Every analysed video, searchable across summary, transcript and OCR.",
-  },
-  {
-    key: "searches",
-    path: "/searches",
-    label: "Saved searches",
-    icon: <SaveOutlined />,
-    blurb: "Questions worth asking again.",
+    blurb:
+      "Every analysed video: search it, open one to read everything the pipeline produced, and save the question.",
   },
   {
     key: "statistics",

@@ -295,3 +295,23 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Worker runner (Pipeline page) ──────────────────────────────────── */
+
+.worker-runner .ant-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.worker-meta {
+  font-size: 12px;
+}
+
+.worker-result {
+  margin-block-start: 4px;
+}
+
+.worker-table .ant-table-row {
+  cursor: pointer;
+}

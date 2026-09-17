@@ -10,7 +10,12 @@
  * pasteable; the tree is what a saved search is for.
  */
 
-import { DownloadOutlined, SaveOutlined } from "@ant-design/icons";
+import {
+  DownloadOutlined,
+  FolderOpenOutlined,
+  PlusOutlined,
+  SaveOutlined,
+} from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Alert, Button, Card, Dropdown, Space, Tag } from "antd";
 import { useCallback, useMemo, useState } from "react";
@@ -25,8 +30,10 @@ import { AdvancedSearchDrawer } from "@/components/explorer/AdvancedSearchDrawer
 import { RecordDrawer } from "@/components/explorer/RecordDrawer";
 import { ResultsTable } from "@/components/explorer/ResultsTable";
 import { SaveSearchModal, type SaveSearchValues } from "@/components/explorer/SaveSearchModal";
+import { SavedSearchDrawer } from "@/components/explorer/SavedSearchDrawer";
 import { SearchBar } from "@/components/explorer/SearchBar";
 import { EMPTY_FILTERS } from "@/components/explorer/SearchBar";
+import { AnalyzeModal } from "@/components/pipeline/AnalyzeModal";
 import { useExplorerQuery } from "@/hooks/useExplorerQuery";
 import { errorText } from "@/lib/errors";
 
@@ -39,6 +46,8 @@ export default function ExplorerPage() {
   const [tree, setTree] = useState<QueryNode | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [analyzeOpen, setAnalyzeOpen] = useState(false);
   const [openRecord, setOpenRecord] = useState<string | null>(null);
 
   const query: RecordQuery = useMemo(
@@ -99,6 +108,31 @@ export default function ExplorerPage() {
     update({ filters: EMPTY_FILTERS, page: 1 });
   };
 
+  /**
+   * Put a saved question back on screen.
+   *
+   * The filter bar and the sort travel in the URL, which is what makes a
+   * search pasteable; the condition tree does not fit there and is held in
+   * state — so applying one is two moves, not one.
+   */
+  const applySaved = (payload: RecordQuery) => {
+    const filters = (payload.filters ?? {}) as Record<string, string>;
+    const list = (key: string) => (filters[key] ? String(filters[key]).split(",") : []);
+    setTree((payload.condition_tree as QueryNode | null) ?? null);
+    update({
+      filters: {
+        q: payload.query_text ?? "",
+        sentiment: list("sentiment"),
+        status: list("status"),
+        model: list("model"),
+      },
+      page: 1,
+      ...(payload.sort ? { sort: payload.sort } : {}),
+      ...(payload.order ? { order: payload.order } : {}),
+      ...(payload.page_size ? { pageSize: payload.page_size } : {}),
+    });
+  };
+
   // A drill-down from the dashboard arrives as plain query parameters, which
   // `useExplorerQuery` already reads — nothing to do here but say so.
   const drilled = params.get("status") === "partial";
@@ -110,8 +144,14 @@ export default function ExplorerPage() {
         blurb="Every analysed video, searchable across summary, entities, transcript and on-screen text."
         extra={
           <Space>
+            <Button icon={<FolderOpenOutlined />} onClick={() => setSavedOpen(true)}>
+              Saved searches
+            </Button>
             <Button icon={<SaveOutlined />} onClick={() => setSaveOpen(true)}>
               Save search
+            </Button>
+            <Button icon={<PlusOutlined />} onClick={() => setAnalyzeOpen(true)}>
+              Analyse a video
             </Button>
             <Dropdown
               menu={{
@@ -215,6 +255,22 @@ export default function ExplorerPage() {
         }
         onSave={(values) => save.mutate(values)}
         onCancel={() => setSaveOpen(false)}
+      />
+
+      <SavedSearchDrawer
+        open={savedOpen}
+        onClose={() => setSavedOpen(false)}
+        onApply={applySaved}
+      />
+
+      <AnalyzeModal
+        open={analyzeOpen}
+        onClose={() => setAnalyzeOpen(false)}
+        onSubmitted={(id) =>
+          message.success(
+            `Submitted as ${id} — the record appears here once the pipeline has finished it.`,
+          )
+        }
       />
 
       <RecordDrawer recordId={openRecord} onClose={() => setOpenRecord(null)} />

@@ -17,7 +17,7 @@ import {
   SunOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Button, Layout, Menu, Segmented, Space, Tooltip, Typography } from "antd";
+import { Alert, Button, Layout, Menu, Space, Tooltip, Typography } from "antd";
 import { useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
@@ -25,14 +25,13 @@ import { metaApi } from "@/api/meta";
 import { STORAGE_KEYS } from "@/config";
 import { NAVIGATION, activeKey } from "@/app/navigation";
 import { useAppearance } from "@/theme/AppearanceProvider";
-import type { Density } from "@/theme/tokens";
 
 const { Header, Sider, Content } = Layout;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { appearance, mode, density, setAppearance, setDensity } = useAppearance();
+  const { appearance, mode, setAppearance } = useAppearance();
   const [collapsed, setCollapsed] = useState<boolean>(
     () => localStorage.getItem(STORAGE_KEYS.sidebarCollapsed) === "true",
   );
@@ -108,17 +107,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {health.data.records.toLocaleString()} records
               </Typography.Text>
             )}
-            <Segmented
-              size="small"
-              aria-label="Density"
-              value={density}
-              onChange={(value) => setDensity(value as Density)}
-              options={[
-                { label: "Compact", value: "compact" },
-                { label: "Default", value: "middle" },
-                { label: "Roomy", value: "comfortable" },
-              ]}
-            />
             <Tooltip title={appearance === "dark" ? "Switch to light" : "Switch to dark"}>
               <Button
                 type="text"

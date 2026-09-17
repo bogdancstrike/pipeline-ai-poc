@@ -15,7 +15,6 @@ import { ErrorBoundary } from "@/app/ErrorBoundary";
 const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
 const ExplorerPage = lazy(() => import("@/pages/ExplorerPage"));
 const RecordPage = lazy(() => import("@/pages/RecordPage"));
-const SavedSearchesPage = lazy(() => import("@/pages/SavedSearchesPage"));
 const StatisticsPage = lazy(() => import("@/pages/StatisticsPage"));
 const PipelinePage = lazy(() => import("@/pages/PipelinePage"));
 
@@ -28,9 +27,11 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/records" element={<ExplorerPage />} />
             <Route path="/records/:recordId" element={<RecordPage />} />
-            <Route path="/searches" element={<SavedSearchesPage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/pipeline" element={<PipelinePage />} />
+            {/* The saved-search page became a drawer on the explorer; an
+                old bookmark still lands where the searches are. */}
+            <Route path="/searches" element={<Navigate to="/records" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
