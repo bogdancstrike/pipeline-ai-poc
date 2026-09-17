@@ -34,7 +34,10 @@ The four branches then part ways:
 
 W7 is the second aggregator: it joins W2's person list with W6's three answers,
 assembles the final record, prints it and writes it to
-`<OUTPUT_DIR>/<video name>_analysis.json`.
+`<OUTPUT_DIR>/<video name>_analysis.json` **and** to PostgreSQL
+(`src/client/store.py`), which is what the client app searches and charts. The
+file is the pipeline's product; the database is the read side, and a database
+that is down costs the row, never the record.
 
 Logging
 -------
@@ -80,6 +83,7 @@ from framework.decorators import kafka_handler, kafka_aggregator
 import ai_client
 import record_writer
 import utils
+from client import store
 
 
 # ============================================================
@@ -463,7 +467,14 @@ def worker_aggregate(merged: dict, consumer_name: str, metadatas: dict) -> dict:
     record = utils.build_record(merged)
 
     utils.console(utils.format_record(record))
-    written = record_writer.write(record) if metadatas.get("persist", True) else None
+    persist = metadatas.get("persist", True)
+    written = record_writer.write(record) if persist else None
+    # The same record, into PostgreSQL, for the client app to search and chart.
+    # `merged["calls"]` is W6's per-call provenance (mocked or live, which URL,
+    # how long) — the record deliberately leaves it out, and the statistics
+    # page is built from it. A database that is down is logged and skipped:
+    # the record is the pipeline's product and it is already on disk.
+    stored = store.save_record(record, merged.get("calls")) if persist else None
 
     failed = sorted(record["errors"])
     utils.worker_done(
@@ -472,7 +483,7 @@ def worker_aggregate(merged: dict, consumer_name: str, metadatas: dict) -> dict:
         f"persons={len(record['enrichment']['face_match']['persons'])} "
         f"entities={len(record['enrichment']['entities']['list'])} "
         f"sentiment={record['enrichment']['sentiment']['text']!r} "
-        f"failed={failed or 'none'} written={written}",
+        f"failed={failed or 'none'} written={written} stored={stored or '-'}",
         started,
     )
     if written:
@@ -491,5 +502,6 @@ def worker_aggregate(merged: dict, consumer_name: str, metadatas: dict) -> dict:
         "sentiment": record["enrichment"]["sentiment"]["text"],
         "failed_services": failed,
         "output_file": written,
+        "stored": bool(stored),
         "record": record,
     }

@@ -1,9 +1,24 @@
-# The QF pipeline and its infrastructure only.
+# The whole application, from nothing to a browsable dashboard:
+#
+#     docker compose up
+#
+#   frontend   :5697  the React/AntD client — nginx, and the API on the same
+#                     origin, so the bundle has no API URL compiled into it
+#   app        :5696  the 7 Kafka workers AND the HTTP API in one process
+#   postgres   :5434  every analysed record, written by W7
+#   pgadmin    :5050  a SQL window onto it, pre-registered
+#   kafka      :9094  + kafka-ui   :8083
+#   redis      :6379  + redisinsight :5540
 #
 # The five AI services (face-match-main :8821, video-describe-354b :8822,
 # video-ocr :8823, transcribe :8824, summarize :8825) are NOT defined here —
 # they run on their own host, reached over HTTP at the AI_*_URL values in .env.
-# Set MOCK_WORKER_<NAME>=True to run this stack without them.
+# Set MOCK_WORKER_<NAME>=True to run this whole stack without them, which is
+# also how the client app gets something to show on a laptop.
+#
+# Ordering: `app` waits for Kafka, Redis and PostgreSQL to be **healthy**, not
+# merely started — a container that is running is not a database accepting
+# connections, and `depends_on` without a condition only promises the former.
 
 networks:
   pipenet:
@@ -11,6 +26,8 @@ networks:
 volumes:
   kafka-data: {}
   redisinsight-data: {}
+  postgres-data: {}
+  pgadmin-data: {}
 
 services:
 
@@ -90,6 +107,48 @@ services:
     volumes:
       - redisinsight-data:/data
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: video-postgres
+    networks: [pipenet]
+    ports:
+      - "${PORT_POSTGRES:-5434}:5432"
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-video}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-video}"
+      POSTGRES_DB: "${POSTGRES_DB:-video_analysis}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-video} -d ${POSTGRES_DB:-video_analysis}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: video-pgadmin
+    networks: [pipenet]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT_PGADMIN:-5050}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_EMAIL:-admin@local}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_PASSWORD:-admin}"
+      # It is a development tool on a private network; the master-password
+      # prompt on every open is friction with nothing behind it.
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      # The pipeline's database, pre-registered: open pgAdmin and the server is
+      # already in the tree (the password is still typed once, by design).
+      - ./maps/pgadmin-servers.json:/pgadmin4/servers.json:ro
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -104,6 +163,8 @@ services:
       kafka:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     ports:
       - "${PORT_API:-5696}:5000"
@@ -121,6 +182,9 @@ services:
       API_PORT: "5000"
       # W7 writes here: /app/output -> ./output on the host.
       OUTPUT_DIR: "/app/output"
+      # …and here. The host port differs (PORT_POSTGRES), the container one
+      # never does, which is why this is an override rather than an .env value.
+      DATABASE_URL: "postgresql+psycopg2://${POSTGRES_USER:-video}:${POSTGRES_PASSWORD:-video}@postgres:5432/${POSTGRES_DB:-video_analysis}"
       # Where a submitted path is looked up when the video is mounted below.
       VIDEO_SEARCH_DIRS: "/app/videos:/app/VIDEOS:/app/data"
     volumes:
@@ -137,3 +201,20 @@ services:
       # W7 writes one <video name>_analysis.json per run here. Bind-mounted, so
       # every record is readable on the host at ./output/ as it is produced.
       - ./output:/app/output
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: video-frontend
+    networks: [pipenet]
+    depends_on: [app]
+    ports:
+      - "${PORT_FRONTEND:-5697}:80"
+    environment:
+      # nginx proxies /client, /pipeline, /workers and /swagger.json to the API
+      # over the compose network, so the browser only ever talks to one origin
+      # and no API URL is compiled into the bundle.
+      CLIENT_API_UPSTREAM: "app:5000"
+      CLIENT_DNS_RESOLVER: "127.0.0.11"
+    restart: unless-stopped

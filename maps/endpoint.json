@@ -7,6 +7,10 @@
     {
       "name": "workers",
       "description": "Run ONE worker synchronously — the answer is the HTTP response, nothing is published to Kafka"
+    },
+    {
+      "name": "client",
+      "description": "The client app: search the analysed records, chart them, and export them"
     }
   ],
   "models": {
@@ -41,7 +45,10 @@
         "args": {
           "required": false,
           "description": "Per-submit overrides for the transcribe service (:8824). Recognised keys: language, task, format, transcription_level, dialog_timestamps. Anything else is ignored; omitted keys fall back to .env.",
-          "example": {"language": "ar", "task": "translate"}
+          "example": {
+            "language": "ar",
+            "task": "translate"
+          }
         }
       }
     },
@@ -75,7 +82,10 @@
         "args": {
           "required": false,
           "description": "Overrides for the transcribe service (:8824): language, task, format, transcription_level, dialog_timestamps.",
-          "example": {"language": "ar", "task": "translate"}
+          "example": {
+            "language": "ar",
+            "task": "translate"
+          }
         }
       },
       "chain": {
@@ -99,7 +109,201 @@
         "args": {
           "required": false,
           "description": "Feed the worker this exact message instead of building one — the shape its topic carries. Implies chain=false. Use it to drive an aggregator with branches you assembled yourself.",
-          "example": {"path": "/video/migrants.mp4", "name": "migrants.mp4"}
+          "example": {
+            "path": "/video/migrants.mp4",
+            "name": "migrants.mp4"
+          }
+        }
+      }
+    },
+    "RecordSearch": {
+      "filters": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "Field filters, e.g. {\"sentiment\": \"NEGATIVE\", \"person_count__gt\": 0}. Any declared field, with an optional __operator suffix (eq, ne, contains, not, starts, ends, gt, gte, lt, lte, between, before, after, in, not_in, empty, not_empty).",
+          "example": {
+            "sentiment": "NEGATIVE",
+            "analysed_at_from": "2026-09-01"
+          }
+        }
+      },
+      "query_text": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Free text, swept across every searchable field (summary, entities, transcript, description, OCR, name).",
+          "example": "ceuta"
+        }
+      },
+      "condition_tree": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "The advanced query builder's nested AND/OR tree, compiled to SQL by client/rules.py.",
+          "example": {
+            "type": "group",
+            "conjunction": "AND",
+            "children1": {
+              "a1": {
+                "type": "rule",
+                "properties": {
+                  "field": "sentiment",
+                  "operator": "select_equals",
+                  "value": [
+                    "NEGATIVE"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "columns": {
+        "type": "list",
+        "args": {
+          "required": false,
+          "description": "Which declared fields the rows carry. Defaults to the explorer's own column set.",
+          "example": [
+            "name",
+            "analysed_at",
+            "sentiment",
+            "entity_count"
+          ]
+        },
+        "super": "string"
+      },
+      "facets": {
+        "type": "boolean",
+        "args": {
+          "required": false,
+          "description": "Also return a GROUP BY count per faceted field, for the filter menus.",
+          "example": true
+        }
+      },
+      "page": {
+        "type": "integer",
+        "args": {
+          "required": false,
+          "description": "1-based page number.",
+          "example": 1
+        }
+      },
+      "page_size": {
+        "type": "integer",
+        "args": {
+          "required": false,
+          "description": "Rows per page, 1-200.",
+          "example": 25
+        }
+      },
+      "sort": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Any sortable field.",
+          "example": "analysed_at"
+        }
+      },
+      "order": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "asc | desc",
+          "example": "desc"
+        }
+      }
+    },
+    "RecordExport": {
+      "format": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "csv | json | xlsx",
+          "example": "csv"
+        }
+      },
+      "filters": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "As /client/records/search."
+        }
+      },
+      "query_text": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "As /client/records/search."
+        }
+      },
+      "condition_tree": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "As /client/records/search."
+        }
+      },
+      "columns": {
+        "type": "list",
+        "args": {
+          "required": false,
+          "description": "Columns the file carries."
+        },
+        "super": "string"
+      },
+      "sort": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Any sortable field."
+        }
+      },
+      "order": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "asc | desc"
+        }
+      }
+    },
+    "SavedSearch": {
+      "name": {
+        "type": "string",
+        "args": {
+          "required": true,
+          "description": "What this question is called.",
+          "example": "Negative, with people"
+        }
+      },
+      "description": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Why it is worth keeping."
+        }
+      },
+      "owner": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Who saved it. A label, not a principal — the app has no auth yet.",
+          "example": "ana"
+        }
+      },
+      "pinned": {
+        "type": "boolean",
+        "args": {
+          "required": false,
+          "description": "Show it first.",
+          "example": false
+        }
+      },
+      "payload": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "The explorer request to store: filters, query_text, condition_tree, columns, sort, order, page_size."
         }
       }
     }
@@ -109,7 +313,9 @@
       "namespace": "pipeline",
       "operation_name": "analyze",
       "model_name": "AnalyzeVideo",
-      "request_method": ["POST"],
+      "request_method": [
+        "POST"
+      ],
       "api_url": "/pipeline/analyze",
       "exec_method": {
         "module_name": "api.pipeline_endpoints",
@@ -120,7 +326,9 @@
       "namespace": "pipeline",
       "operation_name": "health",
       "model_name": "Empty",
-      "request_method": ["GET"],
+      "request_method": [
+        "GET"
+      ],
       "api_url": "/pipeline/health",
       "exec_method": {
         "module_name": "api.pipeline_endpoints",
@@ -131,7 +339,9 @@
       "namespace": "pipeline",
       "operation_name": "config",
       "model_name": "Empty",
-      "request_method": ["GET"],
+      "request_method": [
+        "GET"
+      ],
       "api_url": "/pipeline/config",
       "exec_method": {
         "module_name": "api.pipeline_endpoints",
@@ -142,7 +352,9 @@
       "namespace": "workers",
       "operation_name": "list",
       "model_name": "Empty",
-      "request_method": ["GET"],
+      "request_method": [
+        "GET"
+      ],
       "api_url": "/workers/list",
       "exec_method": {
         "module_name": "api.worker_endpoints",
@@ -153,11 +365,195 @@
       "namespace": "workers",
       "operation_name": "run",
       "model_name": "RunWorker",
-      "request_method": ["POST"],
+      "request_method": [
+        "POST"
+      ],
       "api_url": "/workers/<string:worker>/run",
       "exec_method": {
         "module_name": "api.worker_endpoints",
         "method_name": "worker_run"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "records",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/records",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "records_list"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "records_search",
+      "model_name": "RecordSearch",
+      "request_method": [
+        "POST"
+      ],
+      "api_url": "/client/records/search",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "records_search"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "record_detail",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/records/<string:record_id>",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "record_detail"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "record_related",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/records/<string:record_id>/related",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "record_related"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "records_export",
+      "model_name": "RecordExport",
+      "request_method": [
+        "POST"
+      ],
+      "api_url": "/client/records/export",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "records_export"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "dashboard",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/dashboard",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "dashboard"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "statistics",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/statistics",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "statistics"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "searches",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/searches",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "saved_searches_list"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "search_create",
+      "model_name": "SavedSearch",
+      "request_method": [
+        "POST"
+      ],
+      "api_url": "/client/searches",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "saved_search_create"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "search_update",
+      "model_name": "SavedSearch",
+      "request_method": [
+        "PUT"
+      ],
+      "api_url": "/client/searches/<string:search_id>",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "saved_search_update"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "search_delete",
+      "model_name": "Empty",
+      "request_method": [
+        "DELETE"
+      ],
+      "api_url": "/client/searches/<string:search_id>",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "saved_search_delete"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "search_run",
+      "model_name": "RecordSearch",
+      "request_method": [
+        "POST"
+      ],
+      "api_url": "/client/searches/<string:search_id>/run",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "saved_search_run"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "meta",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/meta",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "meta"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "health",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/health",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "health"
       }
     }
   ]

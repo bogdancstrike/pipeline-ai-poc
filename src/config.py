@@ -204,6 +204,27 @@ class Config:
     # happens to read. The OCR frame array follows OCR_KEEP_FRAMES.
     OUTPUT_INCLUDE_RAW = _flag("OUTPUT_INCLUDE_RAW", "true")
 
+    # -------------------------------------------------------------- PostgreSQL
+    # W7 writes every finished record here as well as to disk, and the client
+    # app (src/client) reads it back: the JSON files are the pipeline's output,
+    # the database is what a UI can search, aggregate and chart.
+    #
+    # The pipeline does not *depend* on it: DB_ENABLED=false (or an unreachable
+    # server) leaves the seven workers running exactly as before, with the file
+    # sink untouched — the record is the pipeline's product, and losing a
+    # database must not lose a video's analysis.
+    DB_ENABLED = _flag("DB_ENABLED", "true")
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL", "postgresql+psycopg2://video:video@localhost:5432/video_analysis"
+    )
+    DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
+    DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
+    DB_POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "30"))
+    DB_ECHO = _flag("DB_ECHO")
+    # Create the tables at boot when they are missing. One process owns the
+    # schema of a PoC; a migration tool would be a second source of truth.
+    DB_CREATE_ALL = _flag("DB_CREATE_ALL", "true")
+
     # ------------------------------------------------------------------- API
     API_HOST = os.getenv("API_HOST", "0.0.0.0")
     API_PORT = int(os.getenv("API_PORT", "5000"))

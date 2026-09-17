@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "video-analysis",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "video_analysis",
+      "Username": "video",
+      "SSLMode": "prefer",
+      "Comment": "Every record W7 wrote: video_records + record_entities / record_persons / record_calls, and saved_searches."
+    }
+  }
+}

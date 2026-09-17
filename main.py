@@ -58,6 +58,24 @@ def _log_wiring():
         logger.error(f"[prompts] {exc}")
         raise
 
+    # The read side (src/client): W7 writes every record here and the
+    # /client/... endpoints serve it to the frontend. Creating the schema at
+    # boot is what makes `docker compose up` on an empty volume just work.
+    # A database that is not there is logged and carried on from — the seven
+    # workers do not need it.
+    from client import db as client_db  # noqa: PLC0415 — see the import above
+
+    if not Config.DB_ENABLED:
+        logger.info("[db] disabled (DB_ENABLED=false) — records go to disk only")
+    elif client_db.available():
+        client_db.create_schema()
+        logger.info(f"[db] records -> {client_db.safe_url()}")
+    else:
+        logger.warning(
+            f"[db] {client_db.safe_url()} is not reachable — records will go to "
+            "disk only until it is; the client app will answer 503"
+        )
+
 
 def main():
     logger.info(
