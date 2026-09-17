@@ -27,13 +27,6 @@ data/*
 !data/.gitkeep
 *.log
 
-# ---- Local config ----
-# `.env` itself IS tracked: it is the documented configuration of the pipeline
-# (AI_*_URL, MOCK_WORKER_*, prompts, output) and holds no credentials. Machine-
-# specific overrides go in a .local file instead of being edited into it.
-.env.local
-.env.*.local
-
 # ---- Editors / OS ----
 .idea/
 .vscode/
