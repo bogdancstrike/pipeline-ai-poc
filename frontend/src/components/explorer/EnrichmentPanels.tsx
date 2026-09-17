@@ -1,9 +1,11 @@
 /**
  * The seven things the pipeline produced, each in its own panel.
  *
- * In pipeline order, because that is the order they were produced in and the
- * order somebody reads them: who is in it, what it looks like, what is said,
- * what is written on screen, then the three prompted answers over all of it.
+ * Stacked, one under the other, in pipeline order — because that is the order
+ * they were produced in and the order somebody reads them: who is in it, what
+ * it looks like, what is said, what is written on screen, then the three
+ * prompted answers over all of it. A grid would put the transcript beside the
+ * OCR and invite reading them as a pair, which they are not.
  *
  *   face match   W2  :8821 /match
  *   description  W3  :8822 /describe
@@ -18,7 +20,7 @@
  * refused" look identical otherwise, and only one of them is worth re-running.
  */
 
-import { Alert, Card, Col, Empty, Row, Space, Tag, Typography } from "antd";
+import { Alert, Card, Empty, Space, Tag, Typography } from "antd";
 import type { ReactNode } from "react";
 
 import type { RecordDetail } from "@/api/types";
@@ -28,7 +30,7 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
   const failure = (service: string) => record.errors[service];
 
   return (
-    <Row gutter={[12, 12]} className="enrichment">
+    <div className="enrichment">
       <Panel
         title="Face match"
         service="face-match-main · :8821"
@@ -50,7 +52,6 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
         service="video-describe-354b · :8822"
         error={failure("video-describe-354b")}
         filled={Boolean(record.description)}
-        span={24}
       >
         <Typography.Paragraph className="record-prose">{record.description}</Typography.Paragraph>
       </Panel>
@@ -61,7 +62,6 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
         error={failure("transcribe")}
         empty="No speech was transcribed."
         filled={Boolean(record.transcript)}
-        span={12}
       >
         <pre className="record-pre">{record.transcript}</pre>
       </Panel>
@@ -72,7 +72,6 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
         error={failure("video-ocr")}
         empty="No text was read off the frames."
         filled={Boolean(record.ocr_text)}
-        span={12}
       >
         <pre className="record-pre">{record.ocr_text}</pre>
       </Panel>
@@ -82,7 +81,6 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
         service="summarize · :8825 · summary.txt"
         error={failure("summary")}
         filled={Boolean(record.summary)}
-        span={24}
       >
         <Typography.Paragraph className="record-prose">{record.summary}</Typography.Paragraph>
       </Panel>
@@ -93,7 +91,6 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
         error={failure("entities")}
         empty="No entities were extracted."
         filled={record.entities.length > 0}
-        span={16}
       >
         <Space wrap size={[4, 8]}>
           {record.entities.map((entity) => (
@@ -109,11 +106,10 @@ export function EnrichmentPanels({ record }: { record: RecordDetail }) {
         service="summarize · :8825 · sentiment.txt"
         error={failure("sentiment")}
         filled={Boolean(record.sentiment)}
-        span={8}
       >
         <SentimentTag value={record.sentiment} />
       </Panel>
-    </Row>
+    </div>
   );
 }
 
@@ -123,7 +119,6 @@ function Panel({
   error,
   empty = "Nothing was produced.",
   filled,
-  span = 24,
   children,
 }: {
   title: string;
@@ -131,25 +126,22 @@ function Panel({
   error?: string;
   empty?: string;
   filled: boolean;
-  span?: number;
   children: ReactNode;
 }) {
   return (
-    <Col xs={24} lg={span}>
-      <Card
+    <Card
         size="small"
         title={title}
         extra={<span className="card-note">{service}</span>}
         className="enrichment-card"
       >
-        {error ? (
-          <Alert type="error" showIcon message="This service did not answer" description={error} />
-        ) : filled ? (
-          children
-        ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} />
-        )}
-      </Card>
-    </Col>
+      {error ? (
+        <Alert type="error" showIcon message="This service did not answer" description={error} />
+      ) : filled ? (
+        children
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} />
+      )}
+    </Card>
   );
 }

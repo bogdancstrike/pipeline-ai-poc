@@ -22,7 +22,7 @@ first video.
 
 import os
 import threading
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from config import Config
 from framework.commons.logger import logger

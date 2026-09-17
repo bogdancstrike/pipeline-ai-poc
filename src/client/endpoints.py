@@ -154,7 +154,13 @@ def record_video(app, operation, request, record_id=None, **kwargs):
                 "services open it on their own filesystem; mount the same file "
                 "under one of VIDEO_SEARCH_DIRS to play it here."
             ),
-            "details": {"path": path, "search_dirs": Config.VIDEO_SEARCH_DIRS},
+            "details": {
+                "path": path,
+                "search_dirs": Config.VIDEO_SEARCH_DIRS,
+                # Every path that was actually looked for, so "but it *is*
+                # mounted" is a question the answer already contains.
+                "tried": media_service.candidates_for(path),
+            },
         }, 404
 
     return send_file(

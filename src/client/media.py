@@ -7,6 +7,10 @@ answers one question: is the file this record names also readable here, under
 one of `VIDEO_SEARCH_DIRS`? If it is, it is streamed; if it is not, the UI is
 told plainly rather than shown a player that will not play.
 
+The two filesystems rarely agree on the root — the services say
+`/video/Inmigracion/x.mp4`, compose mounts the same tree at `/app/videos` — so
+the match is on the path's **tail**, not on its file name alone.
+
 Two rules, because this is the one endpoint that turns a stored string into a
 file read:
 
@@ -21,9 +25,10 @@ this is what stops a path traversal being a file disclosure.
 
 import mimetypes
 import os
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from config import Config
+from framework.commons.logger import logger
 
 #: What a browser can be expected to play, and what we are willing to open.
 VIDEO_SUFFIXES = (".mp4", ".webm", ".mkv", ".mov", ".m4v", ".avi", ".ogg", ".ogv")
@@ -31,27 +36,57 @@ VIDEO_SUFFIXES = (".mp4", ".webm", ".mkv", ".mov", ".m4v", ".avi", ".ogg", ".ogv
 DEFAULT_TYPE = "application/octet-stream"
 
 
-def locate(path: str) -> Optional[str]:
-    """The local file for a record's `path`, or None when there is not one.
+def candidates_for(path: str) -> List[str]:
+    """Every local path a record's `path` could mean, best first.
 
-    Tries the path itself, then the same *file name* inside each search
-    directory — which is the case that matters in compose, where the AI host
-    says `/video/x.mp4` and the same file is mounted at `/app/videos/x.mp4`.
+    The path in a record is the one the AI services opened, on *their*
+    filesystem — `/video/Inmigracion/1abe….mp4`. The same file is usually
+    mounted here under a different root, so the search is by **path suffix**:
+    the whole thing first, then progressively shorter tails joined onto each
+    search directory.
+
+        /video/Inmigracion/1abe….mp4
+          -> /video/Inmigracion/1abe….mp4            (as given)
+          -> /app/videos/video/Inmigracion/1abe….mp4
+          -> /app/videos/Inmigracion/1abe….mp4       ← the one that hits
+          -> /app/videos/1abe….mp4
+
+    Matching only the file name — which is what this did first — finds a video
+    sitting directly in ./videos and misses every one in a subdirectory, which
+    is how the corpus is actually organised.
     """
     raw = str(path or "").strip()
     if not raw:
-        return None
+        return []
 
-    candidates = [raw]
-    name = os.path.basename(raw)
-    if name:
-        candidates.extend(os.path.join(directory, name) for directory in Config.VIDEO_SEARCH_DIRS)
+    parts = [part for part in raw.replace("\\", "/").split("/") if part and part != "."]
+    if not parts:
+        return []
 
-    for candidate in candidates:
+    found = [raw]
+    for directory in Config.VIDEO_SEARCH_DIRS:
+        # Longest tail first: `Inmigracion/x.mp4` is a better answer than
+        # `x.mp4`, which could be a different file of the same name.
+        for start in range(len(parts)):
+            found.append(os.path.join(directory, *parts[start:]))
+
+    seen = set()
+    ordered = []
+    for candidate in found:
+        if candidate not in seen:
+            seen.add(candidate)
+            ordered.append(candidate)
+    return ordered
+
+
+def locate(path: str) -> Optional[str]:
+    """The local file for a record's `path`, or None when there is not one."""
+    for candidate in candidates_for(path):
         resolved = os.path.realpath(candidate)
         if not os.path.isfile(resolved):
             continue
         if not _inside_a_search_dir(resolved):
+            logger.debug(f"[media] {resolved} exists but is outside VIDEO_SEARCH_DIRS")
             continue
         if os.path.splitext(resolved)[1].lower() not in VIDEO_SUFFIXES:
             continue

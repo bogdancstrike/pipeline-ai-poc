@@ -412,8 +412,17 @@ body {
   object-fit: contain;
 }
 
+/* One column, in pipeline order — see EnrichmentPanels.tsx. */
+.enrichment {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A long transcript or a 40-frame OCR dump must not push the panels below it
+   off the screen; each one scrolls inside its own card. */
 .enrichment-card .ant-card-body {
-  max-height: 340px;
+  max-height: 420px;
   overflow: auto;
 }
 
