@@ -1,6 +1,6 @@
 # Testing
 
-Five suites, one stack, 826 tests. This is what is covered, what it found, and
+Five suites, one stack, 825 tests. This is what is covered, what it found, and
 how to run any of it.
 
 ```
@@ -10,7 +10,7 @@ how to run any of it.
   integration  pytest       177     the compose stack           6s
   e2e          Playwright   147     the compose stack          44s
   performance  pytest        19     the compose stack           4s
-  load         pytest        12     the compose stack          74s
+  load         pytest        12     the compose stack          82s
 ```
 
 All of it passes. Six defects were found on the way, five of them fixed; the
@@ -158,13 +158,14 @@ browser talks to one host — and two of the six defects below exist only there.
 | spec | tests | covers |
 | --- | ---: | --- |
 | `shell.spec.ts` | 17 | every route, the sider, dark mode, collapse-and-reload, and each route reached by *pasting* it as well as by navigating to it |
-| `explorer.spec.ts` | 32 | paging, server-side sorting, free text, the facet menus, the record drawer and its three tabs, the permalink |
+| `explorer.spec.ts` | 31 | paging, server-side sorting, free text, the facet menus, the record drawer and its three tabs, the permalink |
 | `pipeline.spec.ts` | 23 | the wiring, the worker runner, the analyse modal, the prompt editor's edit/save/discard/reset cycle |
 | `record-page.spec.ts` | 15 | the seven panels in pipeline order, the service behind each, the calls and JSON tabs, a failed service shown where its text would have been |
 | `advanced-search.spec.ts` | 13 | building a rule, the draft contract, the live preview count, the condition strip, Clear, nested groups |
 | `saved-searches.spec.ts` | 11 | the whole lifecycle in one serial file, cleaning up after itself |
 | `statistics.spec.ts` | 11 | the four headline numbers, one row per service, median/p95/max, recent failures |
 | `export.spec.ts` | 7 | the download itself: format, file name, BOM, and that it carries the question on screen rather than the page |
+| `dashboard.spec.ts` | 12 | the five tiles, the six charts and their accessible labels, every range preset, the drill-down into a narrowed explorer |
 | `responsive.spec.ts` | 7 | the same screens on a Pixel 7, with no horizontal page scroll |
 
 **The fixture is the point.** `tests/e2e/fixtures.ts` fails any test whose page
