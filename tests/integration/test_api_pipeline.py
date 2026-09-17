@@ -20,6 +20,32 @@ pytestmark = pytest.mark.live
 RUN = f"probe-{uuid.uuid4().hex[:8]}"
 
 
+@pytest.fixture(scope="module", autouse=True)
+def sweep_probe_records():
+    """Remove the records this module's submissions produced.
+
+    Submitting to `/pipeline/analyze` really does run the pipeline, so these
+    tests leave rows behind. They are not the corpus and must not be counted
+    with it — hence the prefix, and this.
+    """
+    yield
+
+    import sys
+    import time
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from integration.conftest import _database_on
+    from support import seed
+
+    for _ in range(15):
+        with _database_on():
+            gone = seed.clear("probe-")
+        if gone == 0:
+            break
+        time.sleep(1)
+
+
 # ── the wiring ───────────────────────────────────────────────────────────
 
 
@@ -309,5 +335,3 @@ def test_a_submitted_video_becomes_a_record(stack):
     assert record["status"] in ("analysed", "partial")
     assert record["summary"]
     assert record["calls"], "the provenance W6 collected has to reach the row"
-
-    live.delete(f"/client/records/{run_id}")  # best effort; 405 is fine

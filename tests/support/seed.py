@@ -43,8 +43,13 @@ def _db():
     return db
 
 
-def clear() -> int:
-    """Delete every seeded row. Children go with it (ON DELETE CASCADE)."""
+def clear(prefix: str = corpus.PREFIX) -> int:
+    """Delete every row whose id starts with `prefix`. Children cascade.
+
+    The default is the QA corpus. The other caller is the load suite, which
+    submits real videos to Kafka and therefore leaves real records behind —
+    they are prefixed for the same reason these are.
+    """
     from sqlalchemy import delete
 
     from client.models import VideoRecord
@@ -52,9 +57,7 @@ def clear() -> int:
     db = _db()
     db.create_schema()
     with db.session_scope() as session:
-        result = session.execute(
-            delete(VideoRecord).where(VideoRecord.id.like(f"{corpus.PREFIX}%"))
-        )
+        result = session.execute(delete(VideoRecord).where(VideoRecord.id.like(f"{prefix}%")))
         return int(result.rowcount or 0)
 
 
@@ -91,6 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("seed", "clear", "count"))
     parser.add_argument("--count", type=int, default=DEFAULT_COUNT)
+    parser.add_argument(
+        "--prefix",
+        default=corpus.PREFIX,
+        help="which ids to clear (default: the QA corpus). Try `load-` or `probe-`.",
+    )
     args = parser.parse_args(argv)
 
     started = time.monotonic()
@@ -100,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"seeded {written} records in {elapsed:.2f}s ({written / max(elapsed, 1e-9):.0f}/s)")
         return 0 if written == args.count else 1
     if args.action == "clear":
-        print(f"deleted {clear()} seeded records")
+        print(f"deleted {clear(args.prefix)} records with ids starting {args.prefix!r}")
         return 0
     print(count())
     return 0
