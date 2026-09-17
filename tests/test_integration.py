@@ -39,6 +39,39 @@ def _infra_up() -> bool:
     return _port_open(kafka_host, kafka_port) and _port_open(Config.REDIS_HOST, Config.REDIS_PORT)
 
 
+@pytest.fixture(scope="module", autouse=True)
+def sweep_records():
+    """Remove the rows these runs leave in PostgreSQL.
+
+    The messages go to the real broker, so the *running app container* — which
+    has the database on — turns each one into a record. They are prefixed `it-`
+    and swept here, or they accumulate in whatever corpus somebody is looking
+    at on that machine.
+    """
+    yield
+
+    import sys
+    import time
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
+    try:
+        from integration.conftest import _database_on
+        from support import seed
+    except Exception:  # pragma: no cover - the helpers are optional
+        return
+
+    for _ in range(10):
+        try:
+            with _database_on():
+                gone = seed.clear("it-")
+        except Exception:  # pragma: no cover - no database here is fine
+            return
+        if gone == 0:
+            break
+        time.sleep(1)
+
+
 @pytest.fixture(scope="module")
 def etl_thread():
     """Start the ETL runtime once for the module and leave it running (daemon)."""
