@@ -76,7 +76,7 @@ export interface RecordPage {
 export interface RecordQuery {
   filters?: Record<string, unknown>;
   query_text?: string;
-  condition_tree?: Record<string, unknown> | null;
+  condition_tree?: QueryNode | null;
   columns?: string[];
   facets?: boolean;
   page?: number;

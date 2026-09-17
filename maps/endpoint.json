@@ -306,6 +306,46 @@
           "description": "The explorer request to store: filters, query_text, condition_tree, columns, sort, order, page_size."
         }
       }
+    },
+    "SavedSearchUpdate": {
+      "name": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "What this question is called. Omit to leave it unchanged.",
+          "example": "Negative, with people"
+        }
+      },
+      "description": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Why it is worth keeping."
+        }
+      },
+      "owner": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Who saved it. A label, not a principal — the app has no auth yet.",
+          "example": "ana"
+        }
+      },
+      "pinned": {
+        "type": "boolean",
+        "args": {
+          "required": false,
+          "description": "Show it first.",
+          "example": false
+        }
+      },
+      "payload": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "The explorer request to store: filters, query_text, condition_tree, columns, sort, order, page_size."
+        }
+      }
     }
   },
   "endpoints": [
@@ -494,7 +534,7 @@
     {
       "namespace": "client",
       "operation_name": "search_update",
-      "model_name": "SavedSearch",
+      "model_name": "SavedSearchUpdate",
       "request_method": [
         "PUT"
       ],
