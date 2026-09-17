@@ -208,10 +208,36 @@ def test_the_facet_counts_match_the_corpus(seeded_only, expected):
     assert sentiment == expected["sentiments"]
 
 
-def test_the_facets_narrow_with_the_question(seeded_only):
-    """Menus built from the data, not from a list that drifts from it."""
+def test_a_facet_keeps_offering_the_values_not_yet_chosen(seeded_only, expected):
+    """A menu that collapsed to the chosen value made the multi-select single.
+
+    Each facet is counted with *its own* filter lifted, which is what its
+    docstring always claimed and what makes "NEGATIVE or POSITIVE" reachable
+    from the menu rather than only from a hand-edited URL.
+    """
     facets = search(filters={**seeded_only, "sentiment": "NEGATIVE"}, facets=True)["facets"]
-    assert {entry["value"] for entry in facets["sentiment"]} == {"NEGATIVE"}
+    offered = {entry["value"]: entry["count"] for entry in facets["sentiment"]}
+
+    assert offered == expected["sentiments"]
+
+
+def test_every_other_facet_still_narrows_with_the_question(seeded_only, expected):
+    """Only the facet's own filter is lifted; the rest of the question stands."""
+    facets = search(filters={**seeded_only, "sentiment": "NEGATIVE"}, facets=True)["facets"]
+    statuses = {entry["value"]: entry["count"] for entry in facets["status"]}
+
+    assert sum(statuses.values()) == expected["sentiments"]["NEGATIVE"]
+
+
+def test_a_facet_is_counted_under_the_advanced_condition_too(seeded_only, expected):
+    facets = search(
+        filters=seeded_only,
+        facets=True,
+        condition_tree=tree(rule("status", "select_equals", ["partial"])),
+    )["facets"]
+    sentiments = {entry["value"]: entry["count"] for entry in facets["sentiment"]}
+
+    assert sum(sentiments.values()) == expected["statuses"]["partial"]
 
 
 def test_the_model_facet_offers_every_model_in_the_corpus(seeded_only, expected):

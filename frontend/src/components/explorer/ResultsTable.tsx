@@ -35,7 +35,12 @@ export function ResultsTable({
   const navigate = useNavigate();
   const fields = new Map((page?.fields ?? []).map((field) => [field.name, field]));
 
-  const columns: ColumnsType<RecordRow> = (page?.columns ?? []).map((name) => {
+  // `name` is drawn by the fixed column below, which is the one that opens the
+  // record. Mapping it again as an ordinary column put the video's name on
+  // screen twice, under two headings both called "Video" — so it is dropped
+  // here and the fixed column takes over its sorter.
+  const chosen = (page?.columns ?? []).filter((column) => column !== "name");
+  const columns: ColumnsType<RecordRow> = chosen.map((name) => {
     const field = fields.get(name);
     return {
       key: name,
@@ -51,13 +56,19 @@ export function ResultsTable({
     };
   });
 
-  // Always openable, whatever columns the reader picked.
+  // Always openable, whatever columns the reader picked — and sortable
+  // whenever `name` is one of them, which is where its sorter went.
+  const nameField = fields.get("name");
+  const sortsByName = (page?.columns ?? []).includes("name");
   columns.unshift({
     key: "name",
     dataIndex: "name",
-    title: "Video",
+    title: nameField?.label ?? "Video",
     fixed: "left",
     width: 260,
+    sorter: sortsByName && (nameField?.sortable ?? false),
+    sortOrder:
+      page?.sort === "name" ? (page.order === "asc" ? "ascend" : "descend") : null,
     render: (value: string, row: RecordRow) => (
       <div className="cell-video">
         <a

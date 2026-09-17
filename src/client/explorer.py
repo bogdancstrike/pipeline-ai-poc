@@ -50,7 +50,8 @@ def search(session, payload: Dict[str, Any]) -> Dict[str, Any]:
         raise ValidationError("condition_tree must be an object or null")
 
     page = parse_page(payload, default_sort=DEFAULT_SORT)
-    statement = apply_filters(select(VideoRecord), _filter_args(payload), FIELDS)
+    args = _filter_args(payload)
+    statement = apply_filters(select(VideoRecord), args, FIELDS)
 
     predicate = compile_tree(tree, FIELDS)
     if predicate is not None:
@@ -58,8 +59,20 @@ def search(session, payload: Dict[str, Any]) -> Dict[str, Any]:
 
     total = count_of(session, statement)
     # One GROUP BY per faceted column, and only when asked: computing menus
-    # nobody renders is work the reader waits for.
-    facets = facets_for(session, statement, FIELDS) if payload.get("facets") else {}
+    # nobody renders is work the reader waits for. `base`/`args` are what let
+    # each menu keep offering the values not yet chosen — see `facets_for`.
+    facets = (
+        facets_for(
+            session,
+            statement,
+            FIELDS,
+            base=select(VideoRecord),
+            args=args,
+            extra=predicate,
+        )
+        if payload.get("facets")
+        else {}
+    )
 
     statement = apply_sort(statement, page, FIELDS, default=DEFAULT_SORT)
     rows = session.scalars(

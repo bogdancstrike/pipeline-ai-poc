@@ -537,20 +537,57 @@ def count_of(session, stmt: Select) -> int:
     ) or 0
 
 
-def facets_for(session, stmt: Select, spec: FieldSet, *, limit: int = 50) -> dict[str, list[dict]]:
+def filter_target(key: str) -> str:
+    """The field a filter argument addresses — `sentiment__in` -> `sentiment`."""
+    name = str(key)
+    if "__" in name:
+        name, _, _ = name.rpartition("__")
+        return name
+    for suffix in ("_min", "_max", "_from", "_to"):
+        if name.endswith(suffix):
+            return name[: -len(suffix)]
+    return name
+
+
+def facets_for(
+    session,
+    stmt: Select,
+    spec: FieldSet,
+    *,
+    limit: int = 50,
+    base: Select | None = None,
+    args: Any = None,
+    extra: Any = None,
+) -> dict[str, list[dict]]:
     """Distinct values and counts for each faceted column, under the *other*
     filters currently applied.
 
-    Computed from the filtered statement so the menu shows what is reachable
-    from where the user already is, rather than every value in the table. The
-    statement is reused rather than rebuilt, which is what keeps facet counts
-    honest: they can never disagree with the rows below them.
+    "Other" is the whole point, and it needs `base` and `args` to be honoured:
+    computed from the fully filtered statement, a menu collapses to the one
+    value already chosen the moment anybody chooses it — which makes a
+    multi-select that can only ever hold one thing. So each facet is counted
+    over the question with *its own* filter lifted, and every other narrowing
+    (including the advanced condition in `extra`) still applied.
+
+    Without `base`/`args` it falls back to reusing `stmt`, which is the older
+    behaviour and still correct for a single-valued menu.
     """
     out: dict[str, list[dict]] = {}
     for field_spec in spec.facets:
+        counted_from = stmt
+        if base is not None and args is not None:
+            others = {
+                key: value
+                for key, value in dict(args).items()
+                if filter_target(key) != field_spec.name
+            }
+            counted_from = apply_filters(base, others, spec)
+            if extra is not None:
+                counted_from = counted_from.where(extra)
+
         column = field_spec.column
         counted = (
-            stmt.with_only_columns(column, func.count(), maintain_column_froms=True)
+            counted_from.with_only_columns(column, func.count(), maintain_column_froms=True)
             .group_by(column)
             .order_by(func.count().desc())
             .limit(limit)
