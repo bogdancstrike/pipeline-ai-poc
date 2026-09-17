@@ -16,6 +16,7 @@
  */
 
 import { API_PREFIX, CORRELATION_HEADER } from "@/config";
+import { randomId } from "@/lib/id";
 import { asText } from "@/lib/text";
 
 export interface ApiErrorBody {
@@ -59,10 +60,7 @@ export interface RequestOptions {
 }
 
 function newCorrelationId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID().replace(/-/g, "");
-  }
-  return Math.random().toString(16).slice(2).padEnd(32, "0");
+  return randomId();
 }
 
 export function buildQuery(params: Record<string, unknown> | undefined): string {

@@ -8,6 +8,8 @@
  * documents: `children1` and `properties`.
  */
 
+import { randomId } from "@/lib/id";
+
 import type { QueryNode } from "@/api/types";
 
 export type { QueryNode };
@@ -106,5 +108,5 @@ function withFreshIds(node: QueryNode): QueryNode {
 }
 
 function newId(): string {
-  return crypto.randomUUID();
+  return randomId();
 }
