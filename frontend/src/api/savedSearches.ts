@@ -1,4 +1,5 @@
 import { api } from "@/api/client";
+import { compact } from "@/api/records";
 import type { RecordPage, RecordQuery, SavedSearch, SavedSearchPage } from "@/api/types";
 
 export interface SavedSearchInput {
@@ -22,5 +23,5 @@ export const savedSearchApi = {
 
   /** Run it, and count the run — what makes "recently used" honest. */
   run: (id: string, overrides: RecordQuery = {}) =>
-    api.post<RecordPage>(`/client/searches/${encodeURIComponent(id)}/run`, overrides),
+    api.post<RecordPage>(`/client/searches/${encodeURIComponent(id)}/run`, compact(overrides)),
 };

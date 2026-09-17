@@ -8,3 +8,9 @@ __pycache__/
 .git/
 .env
 tests/
+# The SPA has its own image (frontend/Dockerfile); keeping its node_modules out
+# of this build context is the difference between a 200 MB upload and a 2 MB one.
+frontend/
+output/
+videos/
+.idea/

@@ -19,6 +19,12 @@ for _worker in (
 ):
     os.environ.setdefault(f"MOCK_WORKER_{_worker}", "True")
 
+# W7 writes every record to PostgreSQL as well as to disk. A unit test has no
+# PostgreSQL, and `store.save_record` swallows that by design — but it would
+# still try to connect, once per test, with the pool timeout that implies. Off
+# by default here; `test_client.py` turns it back on against SQLite.
+os.environ.setdefault("DB_ENABLED", "false")
+
 import pytest  # noqa: E402
 
 from framework.commons.utils import deep_merge  # noqa: E402

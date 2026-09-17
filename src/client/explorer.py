@@ -245,8 +245,10 @@ def neighbours(session, record_id: str) -> Dict[str, Any]:
 
 def export_columns(raw: Any) -> List[export_module.Column]:
     names = _columns(raw) if raw else list(EXPORT_COLUMNS)
+    # `Column.title` is derived from `label`; passing it directly is a
+    # TypeError on a frozen slots dataclass.
     return [
-        export_module.Column(name=name, title=FIELDS.by_name[name].title)
+        export_module.Column(name=name, label=FIELDS.by_name[name].title)
         for name in names
         if name in FIELDS.by_name
     ]

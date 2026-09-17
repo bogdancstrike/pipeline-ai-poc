@@ -136,7 +136,9 @@ services:
     ports:
       - "${PORT_PGADMIN:-5050}:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_EMAIL:-admin@local}"
+      # A dot in the domain is not optional: pgAdmin validates the address at
+      # boot and exits when it fails, which looks like a crash loop.
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_EMAIL:-admin@local.dev}"
       PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_PASSWORD:-admin}"
       # It is a development tool on a private network; the master-password
       # prompt on every open is friction with nothing behind it.
@@ -194,10 +196,14 @@ services:
       # The sample corpus that ships with the project.
       - ../VIDEOS:/app/VIDEOS:ro
       - ./data:/app/data:ro
-      # The three prompts W6 posts to :8825 as `prompt_text`. Bind-mounted so
-      # the wording can be edited on the host: `docker compose restart app`
-      # applies it — they are read once at boot.
-      - ./src/prompts:/app/src/prompts:ro
+      # The application code. The image already contains it (see the Dockerfile),
+      # so this mount is purely so that editing a worker, a prompt or a client
+      # endpoint takes effect with `docker compose restart app` instead of a
+      # rebuild. Drop this one line to run exactly what was built.
+      - ./src:/app/src:ro
+      # Registered endpoints. Same reason: adding a route is a restart, not a
+      # rebuild.
+      - ./maps:/app/maps:ro
       # W7 writes one <video name>_analysis.json per run here. Bind-mounted, so
       # every record is readable on the host at ./output/ as it is produced.
       - ./output:/app/output

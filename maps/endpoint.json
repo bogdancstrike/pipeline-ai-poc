@@ -416,7 +416,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "records",
+      "operation_name": "client_records",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -429,7 +429,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "records_search",
+      "operation_name": "client_records_search",
       "model_name": "RecordSearch",
       "request_method": [
         "POST"
@@ -442,7 +442,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "record_detail",
+      "operation_name": "client_record_detail",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -455,7 +455,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "record_related",
+      "operation_name": "client_record_related",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -468,7 +468,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "records_export",
+      "operation_name": "client_records_export",
       "model_name": "RecordExport",
       "request_method": [
         "POST"
@@ -481,7 +481,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "dashboard",
+      "operation_name": "client_dashboard",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -494,7 +494,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "statistics",
+      "operation_name": "client_statistics",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -507,7 +507,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "searches",
+      "operation_name": "client_searches",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -520,7 +520,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "search_create",
+      "operation_name": "client_search_create",
       "model_name": "SavedSearch",
       "request_method": [
         "POST"
@@ -533,7 +533,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "search_update",
+      "operation_name": "client_search_update",
       "model_name": "SavedSearchUpdate",
       "request_method": [
         "PUT"
@@ -546,7 +546,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "search_delete",
+      "operation_name": "client_search_delete",
       "model_name": "Empty",
       "request_method": [
         "DELETE"
@@ -559,7 +559,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "search_run",
+      "operation_name": "client_search_run",
       "model_name": "RecordSearch",
       "request_method": [
         "POST"
@@ -572,7 +572,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "meta",
+      "operation_name": "client_meta",
       "model_name": "Empty",
       "request_method": [
         "GET"
@@ -585,7 +585,7 @@
     },
     {
       "namespace": "client",
-      "operation_name": "health",
+      "operation_name": "client_health",
       "model_name": "Empty",
       "request_method": [
         "GET"
