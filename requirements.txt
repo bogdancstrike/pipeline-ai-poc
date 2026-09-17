@@ -1,0 +1,20 @@
+# QF framework (local wheel — install with:  pip install ./dist/qf-1.0.5-py3-none-any.whl)
+# The wheel declares flask / flask-restx / opentelemetry / python-dotenv / requests,
+# but several runtime deps are used-yet-undeclared by the wheel metadata, so we
+# pin them explicitly here (logger→colorama, ETL→kafka+redis, policies→tenacity/
+# pybreaker/limits).
+colorama>=0.4.6
+kafka-python-ng>=2.2.2
+redis>=5.0.0
+tenacity>=8.2
+pybreaker>=1.2
+limits>=3.7
+varname>=0.13
+Pygments>=2.17
+
+# The five AI services are plain HTTP (src/ai_client.py).
+requests>=2.31.0
+
+# Testing
+pytest>=8.0.0
+pytest-timeout>=2.2.0

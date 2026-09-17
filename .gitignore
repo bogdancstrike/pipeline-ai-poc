@@ -1,0 +1,45 @@
+# ---- Python ----
+venv/
+.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+
+# ---- Test / lint caches ----
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Run artefacts ----
+# Videos are dropped in ./videos and submitted as /app/videos/<name>.mp4, W7
+# writes one <video name>_analysis.json per run into ./output, and ./data is the
+# second search dir. All three are bind-mounted into the container, so they are
+# kept as empty directories and their contents stay out of the repo.
+videos/*
+!videos/.gitkeep
+output/*
+!output/.gitkeep
+data/*
+!data/.gitkeep
+*.log
+
+# ---- Local config ----
+# `.env` itself IS tracked: it is the documented configuration of the pipeline
+# (AI_*_URL, MOCK_WORKER_*, prompts, output) and holds no credentials. Machine-
+# specific overrides go in a .local file instead of being edited into it.
+.env.local
+.env.*.local
+
+# ---- Editors / OS ----
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# NOT ignored, on purpose:
+#   dist/            — the QF framework wheel the Dockerfile installs
+#   src/prompts/*.txt — the three prompts W6 posts to :8825 as `prompt_text`

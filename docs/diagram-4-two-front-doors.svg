@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1600 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagram-4-two-front-doors-title diagram-4-two-front-doors-desc">
+  <title id="diagram-4-two-front-doors-title">Video analysis pipeline — two ways to reach the same workers</title>
+  <desc id="diagram-4-two-front-doors-desc">The same seven worker functions are reachable two ways. POST /pipeline/analyze publishes the video path to Kafka, the workers run across eleven topics with Redis-backed aggregation, and the result arrives later on the console and in output/. POST /workers/&lt;worker&gt;/run looks the worker up in the framework registry, rebuilds the message its topic would have carried by running the workers upstream of it, calls the very same function in-process, and returns what it produced in the HTTP response — publishing nothing to Kafka and buffering nothing in Redis.</desc>
+  <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');</style>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+  <!-- ============ Lane 1 — the pipeline ============ -->
+  <text x="40" y="104" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">1 · PIPELINE — THE ANSWER ARRIVES LATER</text>
+
+  <line x1="256" y1="180" x2="320" y2="180" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="488" y1="180" x2="552" y2="180" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="944" y1="180" x2="1008" y2="180" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <rect x="264" y="158" width="48" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="288" y="167" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">video.in</text>
+
+  <rect x="40" y="136" width="216" height="88" rx="6" fill="#f5f5f5"/>
+  <rect x="40" y="136" width="216" height="88" rx="6" fill="#4f5d75" fill-opacity="0.10" stroke="#7a8399" stroke-width="1"/>
+  <rect x="48" y="144" width="40" height="12" rx="2" fill="none" stroke="#7a8399" stroke-opacity="0.40" stroke-width="0.8"/>
+  <text x="68" y="153" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">POST</text>
+  <text x="148" y="180" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">/pipeline/analyze</text>
+  <text x="148" y="197" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">one video path in</text>
+  <text x="148" y="212" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">202 — submitted</text>
+
+  <rect x="320" y="136" width="168" height="88" rx="6" fill="#f5f5f5"/>
+  <rect x="320" y="136" width="168" height="88" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="404" y="176" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Kafka + Redis</text>
+  <text x="404" y="193" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">11 topics</text>
+  <text x="404" y="208" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">2 aggregation buffers</text>
+
+  <rect x="552" y="124" width="392" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="552" y="124" width="392" height="112" rx="6" fill="#eb6c36" fill-opacity="0.08" stroke="#eb6c36" stroke-width="1"/>
+  <rect x="560" y="132" width="52" height="12" rx="2" fill="none" stroke="#eb6c36" stroke-opacity="0.50" stroke-width="0.8"/>
+  <text x="586" y="141" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">W1..W7</text>
+  <text x="748" y="176" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">the seven worker functions</text>
+  <text x="748" y="196" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">src/workers/pipeline.py</text>
+  <text x="748" y="215" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">the ETL runtime publishes each return value</text>
+
+  <rect x="1008" y="136" width="248" height="88" rx="6" fill="#f5f5f5"/>
+  <rect x="1008" y="136" width="248" height="88" rx="6" fill="#2d3142" fill-opacity="0.05" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="1016" y="144" width="32" height="12" rx="2" fill="none" stroke="#4f5d75" stroke-opacity="0.50" stroke-width="0.8"/>
+  <text x="1032" y="153" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OUT</text>
+  <text x="1132" y="182" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">console + output/*.json</text>
+  <text x="1132" y="200" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">read it when it gets there</text>
+
+  <line x1="40" y1="292" x2="1560" y2="292" stroke="#2d3142" stroke-opacity="0.10" stroke-width="0.8"/>
+
+  <!-- ============ Lane 2 — one worker, on demand ============ -->
+  <text x="40" y="344" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">2 · DIRECT — THE ANSWER IS THE RESPONSE</text>
+
+  <line x1="256" y1="420" x2="320" y2="420" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+  <line x1="552" y1="420" x2="616" y2="420" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+  <line x1="944" y1="420" x2="1008" y2="420" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+
+  <rect x="556" y="398" width="56" height="12" rx="2" fill="#f5f5f5"/>
+  <text x="584" y="407" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">in-process</text>
+
+  <rect x="40" y="376" width="216" height="88" rx="6" fill="#f5f5f5"/>
+  <rect x="40" y="376" width="216" height="88" rx="6" fill="#4f5d75" fill-opacity="0.10" stroke="#7a8399" stroke-width="1"/>
+  <rect x="48" y="384" width="40" height="12" rx="2" fill="none" stroke="#7a8399" stroke-opacity="0.40" stroke-width="0.8"/>
+  <text x="68" y="393" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">POST</text>
+  <text x="148" y="420" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">/workers/…/run</text>
+  <text x="148" y="437" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">the same video path</text>
+  <text x="148" y="452" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">200 — the result</text>
+
+  <rect x="320" y="364" width="232" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="320" y="364" width="232" height="112" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="436" y="404" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">workers/registry.py</text>
+  <text x="436" y="423" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">find the WorkerSpec</text>
+  <text x="436" y="438" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">walk topics_in upstream</text>
+  <text x="436" y="453" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">rebuild the input message</text>
+
+  <rect x="616" y="364" width="328" height="112" rx="6" fill="#f5f5f5"/>
+  <rect x="616" y="364" width="328" height="112" rx="6" fill="#2e5aa8" fill-opacity="0.08" stroke="#2e5aa8" stroke-width="1"/>
+  <rect x="624" y="372" width="52" height="12" rx="2" fill="none" stroke="#2e5aa8" stroke-opacity="0.50" stroke-width="0.8"/>
+  <text x="650" y="381" fill="#2e5aa8" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ONE CALL</text>
+  <text x="780" y="416" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">spec.fn(message, …)</text>
+  <text x="780" y="436" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">the identical worker body</text>
+  <text x="780" y="455" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">@kafka_handler returns the function unchanged</text>
+
+  <rect x="1008" y="376" width="248" height="88" rx="6" fill="#f5f5f5"/>
+  <rect x="1008" y="376" width="248" height="88" rx="6" fill="#2d3142" fill-opacity="0.05" stroke="#4f5d75" stroke-width="1"/>
+  <rect x="1016" y="384" width="32" height="12" rx="2" fill="none" stroke="#4f5d75" stroke-opacity="0.50" stroke-width="0.8"/>
+  <text x="1032" y="393" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OUT</text>
+  <text x="1132" y="418" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">the HTTP response</text>
+  <text x="1132" y="436" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">consumed + result</text>
+  <text x="1132" y="451" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">published: false</text>
+
+  <rect x="320" y="492" width="232" height="26" rx="4" fill="#f5f5f5"/>
+  <rect x="320" y="492" width="232" height="26" rx="4" fill="#4f5d75" fill-opacity="0.05" stroke="#7a8399" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="436" y="509" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Kafka · Redis — not touched</text>
+
+  <!-- ============ Why it works ============ -->
+  <rect x="1312" y="124" width="248" height="394" rx="6" fill="#f5f5f5"/>
+  <rect x="1312" y="124" width="248" height="394" rx="6" fill="#ffffff" stroke="#2d3142" stroke-opacity="0.35" stroke-width="1"/>
+  <rect x="1320" y="132" width="36" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.30" stroke-width="0.8"/>
+  <text x="1338" y="141" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">WHY</text>
+
+  <text x="1436" y="178" fill="#2d3142" font-size="15" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">The decorator registers.</text>
+  <text x="1436" y="200" fill="#2d3142" font-size="15" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">It does not wrap.</text>
+
+  <line x1="1336" y1="224" x2="1536" y2="224" stroke="#2d3142" stroke-opacity="0.12" stroke-width="0.8"/>
+
+  <text x="1336" y="252" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">@kafka_handler(...)</text>
+  <text x="1336" y="267" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">def worker_ocr(msg, …):</text>
+  <text x="1336" y="282" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">    …</text>
+  <text x="1336" y="306" fill="#2e5aa8" font-size="9" font-family="'Geist Mono', monospace">→ registers a WorkerSpec</text>
+  <text x="1336" y="321" fill="#2e5aa8" font-size="9" font-family="'Geist Mono', monospace">→ returns fn unchanged</text>
+
+  <line x1="1336" y1="345" x2="1536" y2="345" stroke="#2d3142" stroke-opacity="0.12" stroke-width="0.8"/>
+
+  <text x="1336" y="372" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">Publishing to topics_out is</text>
+  <text x="1336" y="387" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">done by the ETL runtime</text>
+  <text x="1336" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">AROUND that call — never</text>
+  <text x="1336" y="417" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">inside it.</text>
+
+  <text x="1336" y="446" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">So calling it directly runs</text>
+  <text x="1336" y="461" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">the same code with nothing</text>
+  <text x="1336" y="476" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">downstream of it.</text>
+
+  <text x="1336" y="502" fill="#7a8399" font-size="9" font-style="italic" font-family="'Geist Mono', monospace">The framework is unmodified.</text>
+
+  <!-- Legend -->
+  <line x1="40" y1="546" x2="1560" y2="546" stroke="#2d3142" stroke-opacity="0.10" stroke-width="0.8"/>
+  <text x="40" y="562" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+  <text x="1560" y="562" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.06em">both doors run the same seven functions, and honour the same MOCK_WORKER_* flags</text>
+
+  <rect x="40" y="582" width="14" height="10" rx="2" fill="#4f5d75" fill-opacity="0.10" stroke="#7a8399" stroke-width="1"/>
+  <text x="60" y="590" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Caller</text>
+
+  <rect x="200" y="582" width="14" height="10" rx="2" fill="#eb6c36" fill-opacity="0.08" stroke="#eb6c36" stroke-width="1"/>
+  <text x="220" y="590" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">The workers, driven by Kafka</text>
+
+  <rect x="480" y="582" width="14" height="10" rx="2" fill="#2e5aa8" fill-opacity="0.08" stroke="#2e5aa8" stroke-width="1"/>
+  <text x="500" y="590" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">The same workers, called in-process</text>
+
+  <rect x="800" y="582" width="14" height="10" rx="2" fill="#2d3142" fill-opacity="0.05" stroke="#4f5d75" stroke-width="1"/>
+  <text x="820" y="590" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Where the answer ends up</text>
+
+  <line x1="1060" y1="588" x2="1088" y2="588" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+  <text x="1096" y="590" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">One HTTP request, start to finish</text>
+</svg>

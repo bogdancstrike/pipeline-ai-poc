@@ -1,0 +1,139 @@
+# The QF pipeline and its infrastructure only.
+#
+# The five AI services (face-match-main :8821, video-describe-354b :8822,
+# video-ocr :8823, transcribe :8824, summarize :8825) are NOT defined here —
+# they run on their own host, reached over HTTP at the AI_*_URL values in .env.
+# Set MOCK_WORKER_<NAME>=True to run this stack without them.
+
+networks:
+  pipenet:
+
+volumes:
+  kafka-data: {}
+  redisinsight-data: {}
+
+services:
+
+  kafka:
+    image: apache/kafka:3.9.0
+    container_name: video-kafka
+    networks: [pipenet]
+    ports:
+      # Host port is configurable — see PORT_* in .env. Container side is fixed.
+      - "${PORT_KAFKA:-9094}:9094"
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,EXTERNAL://:9094,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # A transcript, and especially an OCR response with one text block per
+      # sampled frame, go well past Kafka's 1 MB default.
+      KAFKA_MESSAGE_MAX_BYTES: "20971520"
+      KAFKA_REPLICA_FETCH_MAX_BYTES: "20971520"
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: "20971520"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: video-kafka-ui
+    networks: [pipenet]
+    depends_on: [kafka]
+    ports:
+      - "${PORT_KAFKA_UI:-8083}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_PROPERTIES_MAX_REQUEST_SIZE: "20971520"
+
+  redis:
+    image: redis:7-alpine
+    container_name: video-redis
+    networks: [pipenet]
+    ports:
+      - "${PORT_REDIS:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: video-redis-insight
+    networks: [pipenet]
+    depends_on: [redis]
+    ports:
+      - "${PORT_REDIS_INSIGHT:-5540}:5540"
+    environment:
+      # Pre-register the pipeline's Redis, so the UI opens straight on it.
+      RI_REDIS_HOST: "redis"
+      RI_REDIS_PORT: "6379"
+      RI_REDIS_ALIAS: "video-pipeline-redis"
+    volumes:
+      - redisinsight-data:/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-app
+    networks: [pipenet]
+    # Run as the host user, so the records W7 writes into ./output are owned by
+    # you and not by root. Override with DOCKER_UID/DOCKER_GID if your ids
+    # differ (`id -u` / `id -g`).
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${PORT_API:-5696}:5000"
+    # Every AI_*_URL, MOCK_WORKER_*, prompt and output setting comes straight
+    # from .env — edit it and `docker compose up -d app` to apply.
+    env_file:
+      - .env
+    environment:
+      # Container-network overrides for the two .env values that differ inside
+      # Docker. Everything else is inherited from env_file above.
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      API_HOST: "0.0.0.0"
+      API_PORT: "5000"
+      # W7 writes here: /app/output -> ./output on the host.
+      OUTPUT_DIR: "/app/output"
+      # Where a submitted path is looked up when the video is mounted below.
+      VIDEO_SEARCH_DIRS: "/app/videos:/app/VIDEOS:/app/data"
+    volumes:
+      # Drop a video in ./videos and submit it as /app/videos/<name>.mp4 —
+      # or submit the AI host's own path and leave this empty.
+      - ./videos:/app/videos:ro
+      # The sample corpus that ships with the project.
+      - ../VIDEOS:/app/VIDEOS:ro
+      - ./data:/app/data:ro
+      # The three prompts W6 posts to :8825 as `prompt_text`. Bind-mounted so
+      # the wording can be edited on the host: `docker compose restart app`
+      # applies it — they are read once at boot.
+      - ./src/prompts:/app/src/prompts:ro
+      # W7 writes one <video name>_analysis.json per run here. Bind-mounted, so
+      # every record is readable on the host at ./output/ as it is produced.
+      - ./output:/app/output

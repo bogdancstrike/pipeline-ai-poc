@@ -1,0 +1,164 @@
+{
+  "namespaces": [
+    {
+      "name": "pipeline",
+      "description": "Submit one video path and let the 7-worker pipeline run over Kafka"
+    },
+    {
+      "name": "workers",
+      "description": "Run ONE worker synchronously — the answer is the HTTP response, nothing is published to Kafka"
+    }
+  ],
+  "models": {
+    "Empty": {},
+    "AnalyzeVideo": {
+      "path": {
+        "type": "string",
+        "args": {
+          "required": true,
+          "description": "Path to the video, as the AI services (172.17.12.80:8821-8825) will open it. Forwarded untouched; resolved locally first when the same file is mounted here (VIDEO_SEARCH_DIRS: videos/, data/).",
+          "example": "/video/migrants.mp4"
+        }
+      },
+      "id": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Message id. Both aggregators (W6, W7) regroup their branches by it, so it must be unique per submission. Generated when omitted.",
+          "example": "vid-demo-1"
+        }
+      },
+      "name": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Name W7 writes the record under: '<name without extension>_analysis.json' in OUTPUT_DIR. Defaults to the video file name.",
+          "example": "migrants.mp4"
+        }
+      },
+      "options": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "Per-submit overrides for the transcribe service (:8824). Recognised keys: language, task, format, transcription_level, dialog_timestamps. Anything else is ignored; omitted keys fall back to .env.",
+          "example": {"language": "ar", "task": "translate"}
+        }
+      }
+    },
+    "RunWorker": {
+      "path": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "The video to run the worker on. Required unless you supply 'message' instead.",
+          "example": "/video/migrants.mp4"
+        }
+      },
+      "id": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Name for this run — it labels every log line. Generated when omitted.",
+          "example": "try-ocr-1"
+        }
+      },
+      "name": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Video name, as the pipeline would carry it. Defaults to the file name in 'path'.",
+          "example": "migrants.mp4"
+        }
+      },
+      "options": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "Overrides for the transcribe service (:8824): language, task, format, transcription_level, dialog_timestamps.",
+          "example": {"language": "ar", "task": "translate"}
+        }
+      },
+      "chain": {
+        "type": "boolean",
+        "args": {
+          "required": false,
+          "description": "true (default): run the upstream workers first, so this worker receives the message its own topic would have carried — calling 'aggregator' therefore runs the whole pipeline synchronously. false: feed it 'message' (or the body itself) untouched.",
+          "example": true
+        }
+      },
+      "persist": {
+        "type": "boolean",
+        "args": {
+          "required": false,
+          "description": "false (default): the final aggregator prints its record but does not write output/<video>_analysis.json, so a trial run overwrites nothing. true: write it, as the pipeline does.",
+          "example": false
+        }
+      },
+      "message": {
+        "type": "dict",
+        "args": {
+          "required": false,
+          "description": "Feed the worker this exact message instead of building one — the shape its topic carries. Implies chain=false. Use it to drive an aggregator with branches you assembled yourself.",
+          "example": {"path": "/video/migrants.mp4", "name": "migrants.mp4"}
+        }
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "namespace": "pipeline",
+      "operation_name": "analyze",
+      "model_name": "AnalyzeVideo",
+      "request_method": ["POST"],
+      "api_url": "/pipeline/analyze",
+      "exec_method": {
+        "module_name": "api.pipeline_endpoints",
+        "method_name": "pipeline_analyze"
+      }
+    },
+    {
+      "namespace": "pipeline",
+      "operation_name": "health",
+      "model_name": "Empty",
+      "request_method": ["GET"],
+      "api_url": "/pipeline/health",
+      "exec_method": {
+        "module_name": "api.pipeline_endpoints",
+        "method_name": "pipeline_health"
+      }
+    },
+    {
+      "namespace": "pipeline",
+      "operation_name": "config",
+      "model_name": "Empty",
+      "request_method": ["GET"],
+      "api_url": "/pipeline/config",
+      "exec_method": {
+        "module_name": "api.pipeline_endpoints",
+        "method_name": "pipeline_config"
+      }
+    },
+    {
+      "namespace": "workers",
+      "operation_name": "list",
+      "model_name": "Empty",
+      "request_method": ["GET"],
+      "api_url": "/workers/list",
+      "exec_method": {
+        "module_name": "api.worker_endpoints",
+        "method_name": "workers_list"
+      }
+    },
+    {
+      "namespace": "workers",
+      "operation_name": "run",
+      "model_name": "RunWorker",
+      "request_method": ["POST"],
+      "api_url": "/workers/<string:worker>/run",
+      "exec_method": {
+        "module_name": "api.worker_endpoints",
+        "method_name": "worker_run"
+      }
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1600 680" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagram-2-message-shape-title diagram-2-message-shape-desc">
+      <title id="diagram-2-message-shape-title">Video analysis pipeline — message shape</title>
+      <desc id="diagram-2-message-shape-desc">How four AI service answers become one record: the description and the on-screen text are concatenated under titled headings into a single video_description string, the transcript stays separate under transcription, that two-key dictionary is posted to the summary service once per prompt file, and every answer is filed under an enrichment key in the JSON record the last worker writes. The identified persons take a different route — they are structured data, so they bypass the summary payload and go straight into the record.</desc>
+      <defs>
+  <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;family=Noto+Sans+TC:wght@400;500;600&amp;family=Noto+Serif+TC:wght@400&amp;display=swap');</style>
+
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Stage rail -->
+      <text x="40" y="120" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">SERVICE ANSWERS</text>
+      <text x="392" y="120" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">ONE DICTIONARY, TWO KEYS</text>
+      <text x="992" y="120" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">PROMPTS</text>
+      <text x="1272" y="120" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" letter-spacing="0.18em">RECORD</text>
+
+      <!-- Arrows (before boxes) -->
+      <line x1="280" y1="200" x2="392" y2="200" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="280" y1="304" x2="392" y2="304" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="280" y1="408" x2="392" y2="408" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <path d="M 280,512 H 300 Q 308,512 308,520 V 570 Q 308,578 316,578 H 1256 Q 1264,578 1264,570 V 280 Q 1264,272 1272,272" fill="none" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+
+      <line x1="912" y1="252" x2="992" y2="252" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <line x1="912" y1="356" x2="992" y2="356" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <line x1="912" y1="460" x2="992" y2="460" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+
+      <line x1="1192" y1="252" x2="1272" y2="252" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1192" y1="356" x2="1272" y2="356" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="1192" y1="460" x2="1272" y2="460" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Arrow labels: which section of the string each answer fills -->
+      <rect x="288" y="178" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="336" y="187" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">VIDEO DESCRIPTION</text>
+
+      <rect x="288" y="282" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="336" y="291" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON SCREEN TEXT</text>
+
+      <rect x="560" y="572" width="248" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="684" y="581" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">never enters the payload — filed as data</text>
+
+      <rect x="288" y="386" width="96" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="336" y="395" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">"transcription"</text>
+
+      <rect x="916" y="334" width="72" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="952" y="343" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">same × 3</text>
+
+      <!-- Node: video-describe-354b answer -->
+      <rect x="40" y="160" width="240" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="160" width="240" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="48" y="168" width="40" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="68" y="177" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">:8822</text>
+      <text x="160" y="206" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">video-describe-354b</text>
+      <text x="160" y="221" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">description: str</text>
+
+      <!-- Node: video-ocr answer -->
+      <rect x="40" y="264" width="240" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="264" width="240" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="48" y="272" width="40" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="68" y="281" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">:8823</text>
+      <text x="160" y="310" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">video-ocr</text>
+      <text x="160" y="325" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">full_text: str</text>
+
+      <!-- Node: transcribe answer -->
+      <rect x="40" y="368" width="240" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="368" width="240" height="80" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="48" y="376" width="40" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="68" y="385" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">:8824</text>
+      <text x="160" y="414" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">transcribe</text>
+      <text x="160" y="429" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">transcription: str</text>
+
+      <!-- Node: face-match-main answer — the one that bypasses the payload -->
+      <rect x="40" y="472" width="240" height="80" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="472" width="240" height="80" rx="6" fill="#ffffff" stroke="#2e5aa8" stroke-width="1"/>
+      <rect x="48" y="480" width="40" height="12" rx="2" fill="none" stroke="#2e5aa8" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="68" y="489" fill="#2e5aa8" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">:8821</text>
+      <text x="160" y="516" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">face-match-main</text>
+      <text x="160" y="530" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">persons: string[]</text>
+      <text x="160" y="543" fill="#2e5aa8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">straight to the record</text>
+
+      <!-- Node: the inputs payload (focal) -->
+      <rect x="392" y="160" width="520" height="392" rx="6" fill="#f5f5f5"/>
+      <rect x="392" y="160" width="520" height="392" rx="6" fill="#eb6c36" fill-opacity="0.08" stroke="#eb6c36" stroke-width="1"/>
+      <rect x="400" y="168" width="52" height="12" rx="2" fill="none" stroke="#eb6c36" stroke-opacity="0.50" stroke-width="0.8"/>
+      <text x="426" y="177" fill="#eb6c36" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">INPUTS</text>
+      <text x="896" y="177" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.06em">POST :8825 /summarize</text>
+
+      <text x="416" y="210" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">{</text>
+      <text x="416" y="232" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">  "video_description":</text>
+      <text x="416" y="258" fill="#eb6c36" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">      VIDEO DESCRIPTION</text>
+      <text x="416" y="273" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">      The video captures a dramatic and intense…</text>
+      <text x="416" y="306" fill="#eb6c36" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">      ON SCREEN TEXT</text>
+      <text x="416" y="321" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">      Reaction 88886F HUDDER MbA BHM @1 ADMiSSi…</text>
+      <text x="416" y="354" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">  "transcription":</text>
+      <text x="416" y="376" fill="#7a8399" font-size="9" font-family="'Geist Mono', monospace">      00: Hello.</text>
+      <text x="416" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">}</text>
+      <text x="416" y="436" fill="#7a8399" font-size="9" font-style="italic" font-family="'Geist Mono', monospace">  two sections, not three — no PERSONS DETECTED</text>
+
+      <line x1="416" y1="474" x2="888" y2="474" stroke="#eb6c36" stroke-opacity="0.25" stroke-width="0.8"/>
+      <text x="652" y="502" fill="#4f5d75" font-size="14" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">Everything seen becomes one titled string.</text>
+      <text x="652" y="524" fill="#4f5d75" font-size="14" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">Everything heard stays in the other.</text>
+
+      <!-- Node: prompt 1 -->
+      <rect x="992" y="216" width="200" height="72" rx="6" fill="#f5f5f5"/>
+      <rect x="992" y="216" width="200" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="1000" y="224" width="28" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="1014" y="233" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">P1</text>
+      <text x="1092" y="258" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">summary.txt</text>
+      <text x="1092" y="273" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">summary: str</text>
+
+      <!-- Node: prompt 2 -->
+      <rect x="992" y="320" width="200" height="72" rx="6" fill="#f5f5f5"/>
+      <rect x="992" y="320" width="200" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="1000" y="328" width="28" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="1014" y="337" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">P2</text>
+      <text x="1092" y="362" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">entities.txt</text>
+      <text x="1092" y="377" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">parsed to string[]</text>
+
+      <!-- Node: prompt 3 -->
+      <rect x="992" y="424" width="200" height="72" rx="6" fill="#f5f5f5"/>
+      <rect x="992" y="424" width="200" height="72" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="1000" y="432" width="28" height="12" rx="2" fill="none" stroke="#2d3142" stroke-opacity="0.40" stroke-width="0.8"/>
+      <text x="1014" y="441" fill="#2d3142" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">P3</text>
+      <text x="1092" y="466" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">sentiment.txt</text>
+      <text x="1092" y="481" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">sentiment: str</text>
+
+      <!-- Node: the record -->
+      <rect x="1272" y="160" width="288" height="392" rx="6" fill="#f5f5f5"/>
+      <rect x="1272" y="160" width="288" height="392" rx="6" fill="#2d3142" fill-opacity="0.05" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="1280" y="168" width="32" height="12" rx="2" fill="none" stroke="#4f5d75" stroke-opacity="0.50" stroke-width="0.8"/>
+      <text x="1296" y="177" fill="#4f5d75" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OUT</text>
+      <text x="1552" y="177" fill="#7a8399" font-size="7" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.06em">output/&lt;name&gt;_analysis.json</text>
+
+      <text x="1288" y="212" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">{ "id", "name", "path",</text>
+      <text x="1288" y="227" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">  "submitted_at", "analysed_at",</text>
+      <text x="1288" y="252" fill="#2d3142" font-size="9" font-weight="500" font-family="'Geist Mono', monospace">  "enrichment": {</text>
+      <text x="1288" y="272" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "face_match"   persons[]</text>
+      <text x="1288" y="287" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "description"  text</text>
+      <text x="1288" y="302" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "ocr"          text</text>
+      <text x="1288" y="317" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "transcript"   text</text>
+      <text x="1288" y="332" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "summary"      text</text>
+      <text x="1288" y="347" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "entities"     list + text</text>
+      <text x="1288" y="362" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">     "sentiment"    text</text>
+      <text x="1288" y="382" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">  },</text>
+      <text x="1288" y="406" fill="#2d3142" font-size="9" font-family="'Geist Mono', monospace">  "errors"  what would not answer</text>
+      <text x="1288" y="426" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace">}</text>
+      <text x="1288" y="452" fill="#7a8399" font-size="9" font-style="italic" font-family="'Geist Mono', monospace">  the payload and the per-call timings</text>
+      <text x="1288" y="464" fill="#7a8399" font-size="9" font-style="italic" font-family="'Geist Mono', monospace">  stay on the messages, not in the file</text>
+
+      <line x1="1288" y1="478" x2="1544" y2="478" stroke="#2d3142" stroke-opacity="0.12" stroke-width="0.8"/>
+      <text x="1416" y="506" fill="#4f5d75" font-size="14" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">Each entry also keeps the</text>
+      <text x="1416" y="526" fill="#4f5d75" font-size="14" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="middle">service's whole response body.</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="600" x2="1560" y2="600" stroke="#2d3142" stroke-opacity="0.10" stroke-width="0.8"/>
+      <text x="40" y="616" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+      <text x="1560" y="616" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.06em">headings and keys are configurable — see .env</text>
+
+      <rect x="40" y="636" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="60" y="644" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Service answer / prompt file</text>
+
+      <rect x="360" y="636" width="14" height="10" rx="2" fill="#eb6c36" fill-opacity="0.08" stroke="#eb6c36" stroke-width="1"/>
+      <text x="380" y="644" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">What the pipeline assembles and posts</text>
+
+      <rect x="760" y="636" width="14" height="10" rx="2" fill="#2d3142" fill-opacity="0.05" stroke="#4f5d75" stroke-width="1"/>
+      <text x="780" y="644" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">The record W7 writes</text>
+
+      <line x1="1040" y1="642" x2="1068" y2="642" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <text x="1076" y="644" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">One call per prompt, same payload</text>
+
+      <line x1="1340" y1="642" x2="1368" y2="642" stroke="#2e5aa8" stroke-width="1.4" marker-end="url(#arrow-link)"/>
+      <text x="1376" y="644" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Identity, straight to the record</text>
+</svg>
