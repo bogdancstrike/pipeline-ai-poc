@@ -47,9 +47,11 @@ def pipeline_analyze(app, operation, request, **kwargs):
     first so a typo is a 400 now instead of a failed call two workers later; set
     `VIDEO_PATH_PASSTHROUGH=false` to make that check mandatory.
 
-    `id` is optional and becomes the message id every branch is regrouped by —
-    both aggregators key on it, so a re-run needs a fresh id (or let one be
-    generated).
+    `id` is optional and becomes the message id every branch is regrouped by.
+    Left out — which is what the UI does — it is **the video's file name**
+    (`1abe85d1-….mp4`), so the log lines, the record, the JSON file and the
+    database row all name the same thing. Re-submitting a file therefore
+    replaces its record; pass an explicit `id` to keep both.
     """
     payload = json_body()
 

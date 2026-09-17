@@ -42,12 +42,40 @@ def path(name: str) -> str:
 
 
 def load(name: str) -> str:
-    """The text of prompt file `name`, read once and cached.
+    """The prompt text for file `name` — the database's copy, or the file's.
 
     `name` is a bare file name (`summary.txt`) resolved inside
     `Config.PROMPTS_DIR`; anything else is refused so a stray env var cannot
     make the pipeline read an arbitrary file.
+
+    When the prompt has been edited in the UI (`PROMPTS_FROM_DB`, the default)
+    the stored wording wins. The file is what ships, what seeds the table and
+    what is used whenever the database has nothing to say — including when it
+    is down, which is why a prompt outage cannot stop a video being analysed.
+    Use `from_file()` for the shipped text specifically.
     """
+    stored = _stored(name)
+    if stored is not None:
+        return stored
+    return from_file(name)
+
+
+def _stored(name: str) -> Optional[str]:
+    """The database's copy of this prompt, or None. Never raises."""
+    try:
+        from client import prompt_store
+    except Exception:  # pragma: no cover - the client package is optional
+        return None
+
+    kind = prompt_store.kind_of(name)
+    if kind is None:
+        return None
+    answer = prompt_store.text_for(kind)
+    return answer[0] if answer else None
+
+
+def from_file(name: str) -> str:
+    """The shipped text of prompt file `name`, read once and cached."""
     if name != os.path.basename(name):
         raise PromptError(f"prompt {name!r} must be a file name inside {Config.PROMPTS_DIR}")
 
@@ -81,6 +109,8 @@ def preload() -> List[str]:
     """
     names = [Config.SUMMARY_PROMPT, Config.ENTITIES_PROMPT, Config.SENTIMENT_PROMPT]
     for name in names:
-        text = load(name)
+        # The *file*, deliberately: this is the check that the shipped default
+        # is readable, and it runs before the database is known to be there.
+        text = from_file(name)
         logger.info(f"[prompts] {name:<16} {len(text)} chars from {path(name)}")
     return names

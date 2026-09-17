@@ -130,6 +130,13 @@ export interface RecordDetail {
   failed_services: string[];
   entities: EntityRow[];
   calls: CallRow[];
+  /** Whether the file is readable from the pipeline container, and where from. */
+  video?: {
+    playable: boolean;
+    url: string | null;
+    size_bytes: number | null;
+    local_path: string | null;
+  };
   document: Record<string, unknown>;
 }
 

@@ -28,7 +28,7 @@
         "type": "string",
         "args": {
           "required": false,
-          "description": "Message id. Both aggregators (W6, W7) regroup their branches by it, so it must be unique per submission. Generated when omitted.",
+          "description": "Message id. Both aggregators (W6, W7) regroup their branches by it. Defaults to the video's file name (1abe85d1-….mp4), so a record, its JSON file and its log lines all carry the same identifier.",
           "example": "vid-demo-1"
         }
       },
@@ -346,6 +346,24 @@
           "description": "The explorer request to store: filters, query_text, condition_tree, columns, sort, order, page_size."
         }
       }
+    },
+    "PromptText": {
+      "text": {
+        "type": "string",
+        "args": {
+          "required": true,
+          "description": "The prompt, in full. It is posted to :8825 as `prompt_text` on the next video.",
+          "example": "# OBJECTIVES\nYou are an OSINT analyst…"
+        }
+      },
+      "updated_by": {
+        "type": "string",
+        "args": {
+          "required": false,
+          "description": "Who edited it. A label, not a principal — the app has no sign-in yet.",
+          "example": "ana"
+        }
+      }
     }
   },
   "endpoints": [
@@ -594,6 +612,58 @@
       "exec_method": {
         "module_name": "client.endpoints",
         "method_name": "health"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "client_prompts",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/prompts",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "prompts_list"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "client_prompt_save",
+      "model_name": "PromptText",
+      "request_method": [
+        "PUT"
+      ],
+      "api_url": "/client/prompts/<string:name>",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "prompt_save"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "client_prompt_reset",
+      "model_name": "Empty",
+      "request_method": [
+        "POST"
+      ],
+      "api_url": "/client/prompts/<string:name>/reset",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "prompt_reset"
+      }
+    },
+    {
+      "namespace": "client",
+      "operation_name": "client_record_video",
+      "model_name": "Empty",
+      "request_method": [
+        "GET"
+      ],
+      "api_url": "/client/records/<string:record_id>/video",
+      "exec_method": {
+        "module_name": "client.endpoints",
+        "method_name": "record_video"
       }
     }
   ]

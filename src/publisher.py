@@ -12,6 +12,7 @@ a fixed config, and the pipeline needs the larger limit.
 """
 
 import json
+import os
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -50,6 +51,12 @@ def get_producer() -> KafkaProducer:
     return _producer
 
 
+def _id_from_path(path: str) -> str:
+    """The file name of `path`, or a generated id when it has none."""
+    name = os.path.basename(str(path or "").rstrip("/")).strip()
+    return name or f"vid-{uuid.uuid4().hex[:12]}"
+
+
 def publish_video(
     *,
     path: str,
@@ -61,13 +68,20 @@ def publish_video(
     """Publish one video to `video.in` and wait for the broker ack.
 
     `video_id` becomes the message `id` — the key BOTH aggregators regroup their
-    branches by, so it must be unique per submission. One is generated when it
-    is not given.
+    branches by. When it is not given it is **the video's file name**
+    (`1abe85d1-fa2c-4dbe-9399-0ebcf663293c.mp4`), which is what the submitting
+    systems already use as their identifier: the log lines, the record, the
+    JSON file and the database row then all name the same thing, and nobody has
+    to carry a second id around. Re-submitting the same file therefore replaces
+    its record rather than accumulating a second copy under a random id —
+    deliberately, and the same way the file sink behaves.
+
+    A path with no usable file name falls back to a generated id.
 
     `options` is forwarded untouched to the transcribe worker (language, task,
     format, transcription_level, dialog_timestamps); anything else is ignored.
     """
-    video_id = video_id or f"vid-{uuid.uuid4().hex[:12]}"
+    video_id = video_id or _id_from_path(path)
     envelope = {
         "id": video_id,
         "path": path,

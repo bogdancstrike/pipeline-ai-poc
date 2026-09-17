@@ -202,9 +202,32 @@ def detail(session, record_id: str) -> Dict[str, Any]:
             }
             for c in sorted(row.calls, key=lambda c: c.service)
         ],
+        # Is the file readable from here? The player is only rendered when it
+        # is — a <video> pointing at a 404 is a black box with no explanation.
+        "video": _video_of(row),
         # W7's record, verbatim — what the JSON file on disk holds.
         "document": row.document or {},
     }
+
+
+def _video_of(row: VideoRecord) -> Dict[str, Any]:
+    from client import media
+
+    playable, local, size = media.describe(row.path)
+    return {
+        "playable": playable,
+        "url": f"/client/records/{row.id}/video" if playable else None,
+        "size_bytes": size,
+        "local_path": local,
+    }
+
+
+def raw(session, record_id: str) -> VideoRecord:
+    """The row itself — for a caller that needs a column, not a document."""
+    row = session.get(VideoRecord, str(record_id))
+    if row is None:
+        raise NotFoundError(f"no record with id {record_id!r}")
+    return row
 
 
 def neighbours(session, record_id: str) -> Dict[str, Any]:

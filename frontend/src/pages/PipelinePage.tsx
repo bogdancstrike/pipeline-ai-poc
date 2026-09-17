@@ -16,6 +16,7 @@ import { api } from "@/api/client";
 import { metaApi } from "@/api/meta";
 import { PageHeader } from "@/app/AppShell";
 import { AnalyzeModal } from "@/components/pipeline/AnalyzeModal";
+import { PromptEditor } from "@/components/pipeline/PromptEditor";
 import { WorkerRunner } from "@/components/pipeline/WorkerRunner";
 import { errorText } from "@/lib/errors";
 import { ago } from "@/lib/time";
@@ -73,6 +74,8 @@ export default function PipelinePage() {
 
       <WorkerRunner />
 
+      <PromptEditor />
+
       <Row gutter={[12, 12]}>
         <Col xs={24} xl={14}>
           <Card size="small" title="AI services" loading={config.isPending}>
@@ -117,12 +120,7 @@ export default function PipelinePage() {
           </Card>
         </Col>
 
-        <Col xs={24} xl={12}>
-          <Card size="small" title="Summary prompts" loading={config.isPending}>
-            <pre className="record-json">{JSON.stringify(config.data?.prompts ?? {}, null, 2)}</pre>
-          </Card>
-        </Col>
-        <Col xs={24} xl={12}>
+        <Col xs={24}>
           <Card size="small" title="Kafka topics" loading={config.isPending}>
             <pre className="record-json">{JSON.stringify(config.data?.topics ?? {}, null, 2)}</pre>
           </Card>

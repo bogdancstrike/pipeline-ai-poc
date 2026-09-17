@@ -20,6 +20,7 @@ Failures answer with the error envelope from `client.errors`
 one exception type to handle rather than a body per endpoint.
 """
 
+import os
 from typing import Any, Dict, Tuple
 
 from flask import request as flask_request
@@ -30,10 +31,13 @@ from client import dashboard as dashboard_service
 from client import db
 from client import explorer as explorer_service
 from client import export as export_module
+from client import media as media_service
+from client import prompt_store
 from client import saved_searches as saved_search_service
 from client import statistics as statistics_service
 from client.errors import ApiError, ServiceUnavailableError
 from client.resources import FIELDS, SENTIMENTS, SERVICES, STATUSES
+from config import Config
 
 Answer = Tuple[Dict[str, Any], int]
 
@@ -113,6 +117,52 @@ def record_detail(app, operation, request, record_id=None, **kwargs) -> Answer:
 def record_related(app, operation, request, record_id=None, **kwargs) -> Answer:
     """GET /client/records/{record_id}/related — videos sharing an entity."""
     return _answer(explorer_service.neighbours, str(record_id))
+
+
+def record_video(app, operation, request, record_id=None, **kwargs):
+    """GET /client/records/{record_id}/video — the file itself, for the player.
+
+    Streamed with `conditional=True`, which is what makes a browser's range
+    requests work: without it the whole file is sent for every seek and the
+    scrub bar is unusable on anything long.
+
+    A 404 here is not a broken record. The AI services resolve a path on their
+    own filesystem; this container can only serve what is also mounted under
+    VIDEO_SEARCH_DIRS, and the body says so rather than leaving the player to
+    fail silently.
+    """
+    from flask import send_file
+
+    def answer(session):
+        row = explorer_service.raw(session, str(record_id))
+        return row.path
+
+    try:
+        with db.session_scope() as session:
+            path = answer(session)
+    except ApiError as exc:
+        return exc.to_dict(), exc.status_code
+    except db.DatabaseUnavailable as exc:
+        return ServiceUnavailableError(str(exc)).to_dict(), 503
+
+    local = media_service.locate(path)
+    if local is None:
+        return {
+            "error": "not_found",
+            "message": (
+                "This video is not readable from the pipeline container. The AI "
+                "services open it on their own filesystem; mount the same file "
+                "under one of VIDEO_SEARCH_DIRS to play it here."
+            ),
+            "details": {"path": path, "search_dirs": Config.VIDEO_SEARCH_DIRS},
+        }, 404
+
+    return send_file(
+        local,
+        mimetype=media_service.content_type(local),
+        conditional=True,
+        download_name=os.path.basename(local),
+    )
 
 
 def records_export(app, operation, request, **kwargs):
@@ -196,6 +246,35 @@ def saved_search_run(app, operation, request, search_id=None, **kwargs) -> Answe
         return explorer_service.search(session, {**stored, **overrides})
 
     return _answer(run)
+
+
+# ---------------------------------------------------------------------------
+# Prompts — the three texts W6 posts to :8825
+# ---------------------------------------------------------------------------
+
+def prompts_list(app, operation, request, **kwargs) -> Answer:
+    """GET /client/prompts — each prompt, its wording and where it comes from."""
+    return _answer(prompt_store.listing)
+
+
+def prompt_save(app, operation, request, name=None, **kwargs) -> Answer:
+    """PUT /client/prompts/{name} — store a new wording for one prompt.
+
+    It applies to the next video: W6 reads the stored copy through
+    `prompts.load()`, and saving drops this process's cache.
+    """
+    body = _body()
+    return _answer(
+        prompt_store.save,
+        str(name),
+        str(body.get("text") or ""),
+        updated_by=str(body.get("updated_by") or ""),
+    )
+
+
+def prompt_reset(app, operation, request, name=None, **kwargs) -> Answer:
+    """POST /client/prompts/{name}/reset — back to the wording that shipped."""
+    return _answer(prompt_store.reset, str(name))
 
 
 # ---------------------------------------------------------------------------

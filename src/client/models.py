@@ -236,6 +236,37 @@ class SavedSearch(Base):
     )
 
 
+class Prompt(Base):
+    """One of the three prompts W6 posts to :8825, as edited in the UI.
+
+    The `.txt` files under `src/prompts/` remain the **default** — what a fresh
+    database starts from and what the app falls back to when PostgreSQL is not
+    there. A row here overrides its file, so the wording can be changed by an
+    analyst at 11pm without a deploy, and the change is visible to every worker
+    in the process on the next call.
+
+    `version` increments on every save and rides along in the record's
+    metadata, which is what makes "why did last week's summaries read
+    differently?" answerable after the fact.
+    """
+
+    __tablename__ = "prompts"
+
+    #: `summary` | `entities` | `sentiment` — the call it belongs to, not the
+    #: file name: the file is where the default lives, this is what it is for.
+    name: Mapped[str] = mapped_column(String(64), primary_key=True)
+    text: Mapped[str] = mapped_column(Text, default="")
+    #: What the file said when this row was first created, so "reset to the
+    #: shipped wording" does not need the file to still be there.
+    default_text: Mapped[str] = mapped_column(Text, default="")
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    updated_by: Mapped[str] = mapped_column(String(128), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 __all__ = [
     "Base",
     "VideoRecord",
@@ -243,5 +274,6 @@ __all__ = [
     "RecordPerson",
     "RecordCall",
     "SavedSearch",
+    "Prompt",
     "func",
 ]

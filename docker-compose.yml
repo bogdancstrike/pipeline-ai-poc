@@ -5,7 +5,7 @@
 #   frontend   :5697  the React/AntD client — nginx, and the API on the same
 #                     origin, so the bundle has no API URL compiled into it
 #   app        :5696  the 7 Kafka workers AND the HTTP API in one process
-#   postgres   :5434  every analysed record, written by W7
+#   postgres   :5423  every analysed record, written by W7 (5432 inside)
 #   pgadmin    :5050  a SQL window onto it, pre-registered
 #   kafka      :9094  + kafka-ui   :8083
 #   redis      :6379  + redisinsight :5540
@@ -112,7 +112,11 @@ services:
     container_name: video-postgres
     networks: [pipenet]
     ports:
-      - "${PORT_POSTGRES:-5434}:5432"
+      # Host side only. 5432 inside the container never moves, so the app's
+      # DATABASE_URL (postgres:5432) is the same everywhere; the host port is
+      # unusual on purpose, to miss whatever else is already on 5432/5433
+      # wherever this is deployed.
+      - "${PORT_POSTGRES:-5423}:5432"
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-video}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-video}"

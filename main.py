@@ -70,6 +70,16 @@ def _log_wiring():
     elif client_db.available():
         client_db.create_schema()
         logger.info(f"[db] records -> {client_db.safe_url()}")
+        # The three prompts get a row each, from their files, the first time
+        # this runs. After that the rows are the source and the files are the
+        # default — see src/client/prompt_store.py.
+        try:
+            from client import prompt_store
+
+            with client_db.session_scope() as session:
+                prompt_store.seed(session)
+        except Exception as exc:  # a prompt row is not worth failing a boot for
+            logger.warning(f"[prompts] could not seed the database copies: {exc}")
     else:
         logger.warning(
             f"[db] {client_db.safe_url()} is not reachable — records will go to "

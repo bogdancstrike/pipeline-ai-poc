@@ -315,3 +315,122 @@ body {
 .worker-table .ant-table-row {
   cursor: pointer;
 }
+
+/* ── Advanced search workspace ──────────────────────────────────────── */
+
+.nu-advanced-search {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.nu-advanced-help .ant-collapse-content-box {
+  padding-block: 0 !important;
+}
+
+.nu-advanced-lesson {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px 24px;
+}
+
+.nu-advanced-lesson .ant-typography {
+  margin-bottom: 4px;
+}
+
+.nu-advanced-hint {
+  opacity: 0.55;
+}
+
+.nu-query-builder {
+  overflow-x: auto;
+}
+
+/* The library's stylesheet is scoped under `.query-builder`; these are the
+   places its defaults disagree with the application around it. */
+.query-builder {
+  margin: 0;
+}
+
+.query-builder .group,
+.query-builder .rule {
+  background: var(--nu-surface, #fff);
+  border-color: var(--nu-border, #e2e8f0);
+  border-radius: var(--nu-radius-card, 6px);
+}
+
+.query-builder .group--header {
+  align-items: center;
+}
+
+.nu-query-duplicate {
+  align-self: center;
+}
+
+.nu-query-inspector .ant-card-body {
+  padding: 8px 12px;
+}
+
+.nu-query-inspector pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.nu-advanced-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 12px;
+  background: var(--nu-surface, #fff);
+  border-block-start: 1px solid var(--nu-border-subtle, #e2e8f0);
+}
+
+.nu-advanced-count .ant-statistic-title {
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+/* ── Record: player and enrichment ──────────────────────────────────── */
+
+.record-enrichment {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.record-player video {
+  width: 100%;
+  max-height: 420px;
+  background: #000;
+  border-radius: var(--nu-radius-card, 6px);
+  /* A short clip should not stretch to fill a wide drawer. */
+  object-fit: contain;
+}
+
+.enrichment-card .ant-card-body {
+  max-height: 340px;
+  overflow: auto;
+}
+
+/* ── Prompt editor ──────────────────────────────────────────────────── */
+
+.prompt-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prompt-meta {
+  font-size: 12px;
+}
+
+.prompt-textarea {
+  font-family: var(--nu-font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+}

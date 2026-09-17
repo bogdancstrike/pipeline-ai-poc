@@ -145,6 +145,16 @@ class Config:
     SENTIMENT_PROMPT = os.getenv("SENTIMENT_PROMPT", "sentiment.txt")
     SUMMARIZE_NUM_PREDICT = int(os.getenv("SUMMARIZE_NUM_PREDICT", "2048"))
 
+    # The .txt files above are the *default* wording. With PROMPTS_FROM_DB the
+    # `prompts` table overrides them, so an analyst can edit a prompt from
+    # /pipeline in the UI and the next video uses it — no rebuild, no restart.
+    # Turn it off to pin the pipeline to exactly what is in the files.
+    PROMPTS_FROM_DB = _flag("PROMPTS_FROM_DB", "true")
+    # How long a worker trusts its cached copy. Short: the cost of being stale
+    # is somebody editing a prompt and not seeing it take effect. An edit made
+    # in *this* process drops the cache immediately whatever this says.
+    PROMPT_CACHE_SECONDS = float(os.getenv("PROMPT_CACHE_SECONDS", "10"))
+
     # The two keys of the `inputs` dict W6 posts to :8825 — the exact shape the
     # service documents. What the eye can see in the video (the description and
     # the on-screen text) is folded into ONE string under
@@ -215,7 +225,7 @@ class Config:
     # database must not lose a video's analysis.
     DB_ENABLED = _flag("DB_ENABLED", "true")
     DATABASE_URL = os.getenv(
-        "DATABASE_URL", "postgresql+psycopg2://video:video@localhost:5432/video_analysis"
+        "DATABASE_URL", "postgresql+psycopg2://video:video@localhost:5423/video_analysis"
     )
     DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "5"))
     DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))

@@ -234,14 +234,18 @@ export default function ExplorerPage() {
       <AdvancedSearchDrawer
         open={advancedOpen}
         fields={meta.data?.fields ?? results.data?.fields ?? []}
-        tree={tree}
-        conditionText={results.data?.condition_text ?? ""}
-        ruleCount={results.data?.rule_count ?? 0}
-        onApply={(next) => {
+        request={query}
+        onClose={() => setAdvancedOpen(false)}
+        onSearch={(next) => {
           setTree(next);
           update({ page: 1 });
         }}
-        onClose={() => setAdvancedOpen(false)}
+        onSave={(next) => {
+          // Saving from the drawer stores the draft, not what is on screen —
+          // otherwise "Save as…" before "Search" would save the wrong thing.
+          setTree(next);
+          setSaveOpen(true);
+        }}
       />
 
       <SaveSearchModal

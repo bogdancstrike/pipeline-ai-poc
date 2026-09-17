@@ -10,9 +10,11 @@
  * look identical otherwise, and only one of them is worth re-running.
  */
 
-import { Alert, Card, Col, Descriptions, Empty, Row, Space, Table, Tabs, Tag, Typography } from "antd";
+import { Alert, Card, Descriptions, Empty, Space, Table, Tabs, Tag, Typography } from "antd";
 
 import type { CallRow, RecordDetail } from "@/api/types";
+import { EnrichmentPanels } from "@/components/explorer/EnrichmentPanels";
+import { VideoPlayer } from "@/components/explorer/VideoPlayer";
 import { SentimentTag } from "@/components/SentimentTag";
 import { StatusTag } from "@/components/StatusTag";
 import { errorText } from "@/lib/errors";
@@ -23,8 +25,6 @@ export function RecordView({ record, error }: { record?: RecordDetail; error?: u
     return <Alert type="error" showIcon message="This record could not be read" description={errorText(error)} />;
   }
   if (!record) return <Empty description="No record" />;
-
-  const failed = (service: string) => record.errors[service];
 
   return (
     <div className="record-view">
@@ -70,76 +70,16 @@ export function RecordView({ record, error }: { record?: RecordDetail; error?: u
       )}
 
       <Tabs
-        defaultActiveKey="summary"
+        defaultActiveKey="enrichment"
         items={[
           {
-            key: "summary",
-            label: "Summary",
+            key: "enrichment",
+            label: "Enrichment",
             children: (
-              <Row gutter={[12, 12]}>
-                <Col span={24}>
-                  <Card size="small" title="Summary">
-                    <Prose text={record.summary} missing={failed("summary")} />
-                  </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Card size="small" title={`Entities (${record.entities.length})`}>
-                    {record.entities.length ? (
-                      <Space wrap size={[4, 8]}>
-                        {record.entities.map((entity) => (
-                          <Tag key={`${entity.type}-${entity.value}-${entity.position}`}>
-                            <strong>{entity.type}</strong> {entity.value}
-                          </Tag>
-                        ))}
-                      </Space>
-                    ) : (
-                      <Prose text="" missing={failed("entities")} />
-                    )}
-                  </Card>
-                </Col>
-                <Col xs={24} lg={12}>
-                  <Card size="small" title={`Persons (${record.persons.length})`}>
-                    {record.persons.length ? (
-                      <Space wrap>
-                        {record.persons.map((person) => (
-                          <Tag key={person} color="processing">
-                            {person}
-                          </Tag>
-                        ))}
-                      </Space>
-                    ) : (
-                      <Prose text="" missing={failed("face-match-main")} empty="Nobody was matched." />
-                    )}
-                  </Card>
-                </Col>
-              </Row>
-            ),
-          },
-          {
-            key: "transcript",
-            label: "Transcript",
-            children: (
-              <Card size="small" title={`Transcript${record.transcript_format ? ` · ${record.transcript_format}` : ""}`}>
-                <Prose text={record.transcript} missing={failed("transcribe")} pre />
-              </Card>
-            ),
-          },
-          {
-            key: "video",
-            label: "Video & OCR",
-            children: (
-              <Row gutter={[12, 12]}>
-                <Col span={24}>
-                  <Card size="small" title="Description">
-                    <Prose text={record.description} missing={failed("video-describe-354b")} />
-                  </Card>
-                </Col>
-                <Col span={24}>
-                  <Card size="small" title={`On-screen text · ${record.ocr_frames_count} frames`}>
-                    <Prose text={record.ocr_text} missing={failed("video-ocr")} pre />
-                  </Card>
-                </Col>
-              </Row>
+              <div className="record-enrichment">
+                <VideoPlayer record={record} />
+                <EnrichmentPanels record={record} />
+              </div>
             ),
           },
           {
@@ -159,28 +99,6 @@ export function RecordView({ record, error }: { record?: RecordDetail; error?: u
         ]}
       />
     </div>
-  );
-}
-
-function Prose({
-  text,
-  missing,
-  pre,
-  empty = "Nothing was produced.",
-}: {
-  text: string;
-  missing?: string;
-  pre?: boolean;
-  empty?: string;
-}) {
-  if (missing) {
-    return <Alert type="error" showIcon message="This service did not answer" description={missing} />;
-  }
-  if (!text) return <Typography.Text type="secondary">{empty}</Typography.Text>;
-  return pre ? (
-    <pre className="record-pre">{text}</pre>
-  ) : (
-    <Typography.Paragraph className="record-prose">{text}</Typography.Paragraph>
   );
 }
 

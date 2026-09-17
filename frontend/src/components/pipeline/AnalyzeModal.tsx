@@ -19,7 +19,6 @@ import { errorText } from "@/lib/errors";
 
 interface FormValues {
   path: string;
-  id?: string;
   language?: string;
   task?: string;
 }
@@ -37,8 +36,11 @@ export function AnalyzeModal({
 
   const submit = useMutation({
     mutationFn: (values: FormValues) => {
+      // No run id: the pipeline names the run after the video's file name
+      // (1abe85d1-….mp4), which is the identifier the submitting systems
+      // already use — so the record, its JSON file and its log lines all say
+      // the same thing and nobody carries a second id around.
       const body: AnalyzeRequest = { path: values.path.trim() };
-      if (values.id?.trim()) body.id = values.id.trim();
       // Only the transcribe overrides actually chosen; the rest fall back to
       // .env, which is where the defaults are documented.
       const options: Record<string, unknown> = {};
@@ -65,7 +67,8 @@ export function AnalyzeModal({
     >
       <Typography.Paragraph type="secondary">
         The message goes on <Typography.Text code>video.in</Typography.Text> and the seven
-        workers take it from there. The record appears here once W7 has written it.
+        workers take it from there. The run is named after the file, and the record appears
+        here once W7 has written it.
       </Typography.Paragraph>
 
       {submit.error && (
@@ -86,13 +89,6 @@ export function AnalyzeModal({
           rules={[{ required: true, message: "The pipeline needs a path" }]}
         >
           <Input placeholder="/video/migrants.mp4" autoFocus />
-        </Form.Item>
-        <Form.Item
-          name="id"
-          label="Run id"
-          tooltip="Both aggregators group their branches by it, so it must be unique. Generated when left empty."
-        >
-          <Input placeholder="generated" />
         </Form.Item>
         <Form.Item name="language" label="Transcribe language" tooltip="Overrides TRANSCRIBE_LANGUAGE for this run.">
           <Select
