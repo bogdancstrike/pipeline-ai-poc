@@ -15,6 +15,12 @@ npm-debug.log*
 
 # ---- Test / lint caches ----
 .pytest_cache/
+# Playwright's own output: the browser binaries live in ~/.cache, these are the
+# traces, screenshots and videos of a run.
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+tests/e2e/blob-report/
+tests/e2e/.last-run.json
 .mypy_cache/
 .ruff_cache/
 .coverage

@@ -63,7 +63,15 @@ export function AnalyzeModal({
       okText="Submit"
       confirmLoading={submit.isPending}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => submit.mutate(values))}
+      // The `.catch` is not optional: a failed validation rejects, and an
+      // unhandled rejection is an uncaught error in the console for something
+      // the form has already pointed at on screen.
+      onOk={() =>
+        form
+          .validateFields()
+          .then((values) => submit.mutate(values))
+          .catch(() => undefined)
+      }
     >
       <Typography.Paragraph type="secondary">
         The message goes on <Typography.Text code>video.in</Typography.Text> and the seven

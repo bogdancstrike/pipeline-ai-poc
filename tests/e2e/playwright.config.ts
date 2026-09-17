@@ -44,6 +44,9 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
+      // The responsive checks assert a phone layout; at 1440px they assert the
+      // opposite of what is correct.
+      testIgnore: /responsive\.spec\.ts/,
     },
     {
       // The layout is responsive; the sider collapses and the tables scroll.

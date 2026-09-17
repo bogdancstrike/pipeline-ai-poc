@@ -31,8 +31,17 @@ const BENIGN = [
   /ResizeObserver loop/i,
 ];
 
-export const test = base.extend<{ page: Page }>({
-  page: async ({ page }, use) => {
+export const test = base.extend<{ page: Page; expectedConsoleErrors: RegExp[] }>({
+  /**
+   * Patterns a *particular* test expects to see.
+   *
+   * Used with `test.use({ expectedConsoleErrors: [...] })` for the handful of
+   * screens whose job is to render a failure: a 404 fetch is a console error
+   * in every browser, and the page is correct precisely because it happened.
+   */
+  expectedConsoleErrors: [[], { option: true }],
+
+  page: async ({ page, expectedConsoleErrors }, use) => {
     const problems: string[] = [];
 
     page.on("pageerror", (error) => problems.push(`uncaught: ${error.message}`));
@@ -40,6 +49,7 @@ export const test = base.extend<{ page: Page }>({
       if (message.type() !== "error") return;
       const text = message.text();
       if (BENIGN.some((pattern) => pattern.test(text))) return;
+      if (expectedConsoleErrors.some((pattern) => pattern.test(text))) return;
       problems.push(`console.error: ${text}`);
     });
 

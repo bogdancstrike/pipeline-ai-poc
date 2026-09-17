@@ -56,10 +56,17 @@ export function SaveSearchModal({
       confirmLoading={saving}
       onCancel={onCancel}
       onOk={() => {
-        form.validateFields().then((values) => {
-          localStorage.setItem(STORAGE_KEYS.owner, values.owner ?? "");
-          onSave(values);
-        });
+        form
+          .validateFields()
+          .then((values) => {
+            localStorage.setItem(STORAGE_KEYS.owner, values.owner ?? "");
+            onSave(values);
+          })
+          // A failed validation rejects, and the form has already said which
+          // field is wrong. Without this the rejection is unhandled, which is
+          // an uncaught error in the console for something the reader can see
+          // and fix on screen.
+          .catch(() => undefined);
       }}
     >
       <Typography.Paragraph type="secondary">{summary}</Typography.Paragraph>
