@@ -296,14 +296,75 @@ body {
   }
 }
 
-/* ── Worker runner (Pipeline page) ──────────────────────────────────── */
+/* ── Pipeline page ──────────────────────────────────────────────────── */
 
-.worker-runner .ant-card-body {
+/*
+ * Three sections, generously apart, over a column narrow enough to read.
+ * A prompt is prose and a worker's answer is JSON; neither is improved by
+ * being 1800 pixels wide on the monitor this is usually open on.
+ */
+.pipeline {
+  gap: 28px;
+  max-width: 1060px;
+}
+
+.pipeline-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* A rule under the heading says what a card's border said, with no box. */
+.pipeline-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-block-end: 8px;
+  border-block-end: 1px solid var(--nu-border-subtle, #e2e8f0);
+}
+
+.pipeline-section-title {
+  margin: 0 !important;
+}
+
+.pipeline-section-note {
+  font-size: 12px;
+  max-width: 70ch;
+}
+
+/* ── Worker runner ──────────────────────────────────────────────────── */
+
+.worker-runner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/*
+ * Picker, path, verb — one row, and the path takes whatever is left. This was
+ * a Form of four stacked Form.Items with their own labels and margins, which
+ * is five rows of chrome around three controls.
+ */
+.worker-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.worker-picker {
+  min-width: 240px;
+}
+
+.worker-path {
+  flex: 1 1 320px;
+  min-width: 240px;
+  font-family: var(--nu-font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
+}
+
+.worker-options,
 .worker-meta {
   font-size: 12px;
 }
@@ -312,8 +373,63 @@ body {
   margin-block-start: 4px;
 }
 
-.worker-table .ant-table-row {
-  cursor: pointer;
+.worker-result-label {
+  display: block;
+  font-size: 12px;
+  margin-block-end: 4px;
+}
+
+/* ── AI services ────────────────────────────────────────────────────── */
+
+/*
+ * One line per service instead of a three-column table. The name is the thing
+ * being scanned, so it is what the eye lands on; the address is secondary and
+ * monospaced because the port is the part that differs.
+ */
+.service-strip {
+  display: flex;
+  flex-direction: column;
+}
+
+.service-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 8px;
+  border-block-end: 1px solid var(--nu-border-subtle, #e2e8f0);
+}
+
+.service-row:last-child {
+  border-block-end: none;
+}
+
+.service-name {
+  flex: 1 1 auto;
+  font-weight: 500;
+}
+
+.service-url {
+  font-family: var(--nu-font-mono, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  font-size: 12px;
+  opacity: 0.7;
+  cursor: default;
+}
+
+/*
+ * The mode is the column being compared down the list — "which of these is
+ * live?" — so it gets a fixed width and the addresses end where it starts.
+ * Ragged tags at five different x positions are five things to find.
+ */
+.service-mode {
+  flex: none;
+  width: 68px;
+  text-align: center;
+}
+
+.service-mode .ant-tag {
+  margin-inline-end: 0;
+  width: 100%;
+  text-align: center;
 }
 
 /* ── Advanced search workspace ──────────────────────────────────────── */
@@ -428,10 +544,25 @@ body {
 
 /* ── Prompt editor ──────────────────────────────────────────────────── */
 
+.prompt-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .prompt-pane {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+/* The provenance and the three verbs share a line; they were two rows. */
+.prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .prompt-meta {

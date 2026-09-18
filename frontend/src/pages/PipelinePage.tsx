@@ -1,25 +1,31 @@
 /**
  * The wiring behind the records.
  *
- * Everything on this page comes from the pipeline's own endpoints — the ones
- * that existed before this client app did (`/pipeline/config`,
- * `/pipeline/health`) — so it answers "why does every record say mocked?" or
- * "which prompt produced this summary?" without a shell on the container.
+ * Three things, in the order somebody reaches for them: the prompts that
+ * decide what the next video's summary says, the runner for trying one worker
+ * against one file, and — last, because it is reference rather than a control —
+ * where the five AI services live and whether each is answering or mocked.
+ *
+ * It is deliberately flat. This page used to be five stacked cards, two of them
+ * raw JSON and a database status nobody came here for, and the two things it is
+ * actually for were buried in the middle of it. Sections with a rule under the
+ * heading say the same thing as a card and take a tenth of the ink.
+ *
+ * Everything still comes from the pipeline's own endpoints, so "why does every
+ * record say mocked?" is answerable without a shell on the container.
  */
 
 import { PlusOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { App, Alert, Button, Card, Col, Descriptions, Row, Table, Tag } from "antd";
-import { useState } from "react";
+import { App, Alert, Button, Skeleton, Tag, Tooltip, Typography } from "antd";
+import { useState, type ReactNode } from "react";
 
 import { api } from "@/api/client";
-import { metaApi } from "@/api/meta";
 import { PageHeader } from "@/app/AppShell";
 import { AnalyzeModal } from "@/components/pipeline/AnalyzeModal";
 import { PromptEditor } from "@/components/pipeline/PromptEditor";
 import { WorkerRunner } from "@/components/pipeline/WorkerRunner";
 import { errorText } from "@/lib/errors";
-import { ago } from "@/lib/time";
 
 interface PipelineConfig {
   ai_services: Record<string, string>;
@@ -40,22 +46,11 @@ export default function PipelinePage() {
     queryFn: ({ signal }) => api.get<PipelineConfig>("/pipeline/config", { signal }),
   });
 
-  const health = useQuery({
-    queryKey: ["client-health"],
-    queryFn: ({ signal }) => metaApi.health(signal),
-  });
-
-  const services = Object.entries(config.data?.ai_services ?? {}).map(([name, url]) => ({
-    name,
-    url,
-    mocked: config.data?.mocked?.[name] ?? config.data?.mocked?.[name.split(":")[0] ?? name],
-  }));
-
   return (
-    <div className="page">
+    <div className="page pipeline">
       <PageHeader
         title="Pipeline"
-        blurb="Submit a video, run a single worker, and see where each AI service lives."
+        blurb="Edit the prompts the next video will use, run a single worker, and see where each AI service lives."
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setAnalyzeOpen(true)}>
             Analyse a video
@@ -72,60 +67,23 @@ export default function PipelinePage() {
         />
       )}
 
-      <WorkerRunner />
+      <Section
+        title="Summary prompts"
+        note="Posted to :8825 in full. A saved prompt applies to the next video — no restart."
+      >
+        <PromptEditor />
+      </Section>
 
-      <PromptEditor />
+      <Section
+        title="Run one worker"
+        note="Runs inside this request. Nothing is published to Kafka, and no downstream worker fires."
+      >
+        <WorkerRunner />
+      </Section>
 
-      <Row gutter={[12, 12]}>
-        <Col xs={24} xl={14}>
-          <Card size="small" title="AI services" loading={config.isPending}>
-            <Table
-              rowKey="name"
-              size="small"
-              pagination={false}
-              dataSource={services}
-              columns={[
-                { title: "Service", dataIndex: "name", key: "name" },
-                { title: "Endpoint", dataIndex: "url", key: "url", ellipsis: true },
-                {
-                  title: "Mode",
-                  dataIndex: "mocked",
-                  key: "mocked",
-                  width: 110,
-                  render: (mocked: boolean | undefined) =>
-                    mocked ? <Tag>mocked</Tag> : <Tag color="success">live</Tag>,
-                },
-              ]}
-            />
-          </Card>
-        </Col>
-
-        <Col xs={24} xl={10}>
-          <Card size="small" title="Records database" loading={health.isPending}>
-            <Descriptions size="small" column={1} bordered>
-              <Descriptions.Item label="Status">
-                {health.data?.status === "ok" ? (
-                  <Tag color="success">connected</Tag>
-                ) : (
-                  <Tag color="error">{health.data?.status ?? "unreachable"}</Tag>
-                )}
-              </Descriptions.Item>
-              <Descriptions.Item label="URL">{health.data?.url ?? "—"}</Descriptions.Item>
-              <Descriptions.Item label="Records">{health.data?.records ?? 0}</Descriptions.Item>
-              <Descriptions.Item label="AI calls stored">{health.data?.calls ?? 0}</Descriptions.Item>
-              <Descriptions.Item label="Latest record">
-                {health.data?.latest ? ago(health.data.latest) : "none yet"}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
-
-        <Col xs={24}>
-          <Card size="small" title="Kafka topics" loading={config.isPending}>
-            <pre className="record-json">{JSON.stringify(config.data?.topics ?? {}, null, 2)}</pre>
-          </Card>
-        </Col>
-      </Row>
+      <Section title="AI services">
+        <Services config={config.data} loading={config.isPending} />
+      </Section>
 
       <AnalyzeModal
         open={analyzeOpen}
@@ -138,3 +96,76 @@ export default function PipelinePage() {
   );
 }
 
+/**
+ * One part of the page: a heading, an optional line saying what it is for, and
+ * a rule to separate it from the next one.
+ *
+ * A `<section>` with a heading rather than a `<Card>`: three cards stacked down
+ * a page is three borders, three shadows and three paddings drawn around
+ * content that is already obviously separate.
+ */
+function Section({
+  title,
+  note,
+  children,
+}: {
+  title: string;
+  note?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="pipeline-section">
+      <div className="pipeline-section-head">
+        <Typography.Title level={5} className="pipeline-section-title">
+          {title}
+        </Typography.Title>
+        {note && (
+          <Typography.Text type="secondary" className="pipeline-section-note">
+            {note}
+          </Typography.Text>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Where the five services live, and whether each is answering or canned.
+ *
+ * A strip of one line each rather than a table: the columns were a name, a URL
+ * and a word, and a table around three values is furniture. The full URL is on
+ * the hostname's tooltip, because the port is what tells them apart.
+ */
+function Services({ config, loading }: { config?: PipelineConfig; loading: boolean }) {
+  if (loading) return <Skeleton active paragraph={{ rows: 3 }} />;
+
+  const services = Object.entries(config?.ai_services ?? {});
+  if (!services.length) {
+    return <Typography.Text type="secondary">The pipeline named no services.</Typography.Text>;
+  }
+
+  return (
+    <div className="service-strip">
+      {services.map(([name, url]) => {
+        const mocked = config?.mocked?.[name] ?? config?.mocked?.[name.split(":")[0] ?? name];
+        return (
+          <div key={name} className="service-row">
+            <span className="service-name">{name}</span>
+            <Tooltip title={url}>
+              <span className="service-url">{shortUrl(url)}</span>
+            </Tooltip>
+            <span className="service-mode">
+              {mocked ? <Tag>mocked</Tag> : <Tag color="success">live</Tag>}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** `http://172.17.12.80:8821` -> `172.17.12.80:8821` — the host is the same for all five. */
+function shortUrl(url: string): string {
+  return String(url).replace(/^https?:\/\//, "").replace(/\/$/, "");
+}

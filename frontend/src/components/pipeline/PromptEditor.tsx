@@ -14,11 +14,15 @@
  *     clear whether the running prompt is the one in the repository.
  *   * **Reset is offered per prompt**, and it restores the file's text rather
  *     than the last save — the file is the default this project ships.
+ *
+ * The page owns the heading and the one-line explanation; this owns the
+ * editing. It renders no card of its own, so three sections down the page are
+ * three headings rather than three boxes.
  */
 
 import { ReloadOutlined, SaveOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { App, Alert, Badge, Button, Card, Input, Popconfirm, Space, Tabs, Tag, Typography } from "antd";
+import { App, Alert, Badge, Button, Input, Popconfirm, Skeleton, Space, Tabs, Tag, Typography } from "antd";
 import { useEffect, useState } from "react";
 
 import { promptsApi, type PromptRow } from "@/api/prompts";
@@ -69,34 +73,27 @@ export function PromptEditor() {
     onError: (error) => message.error(errorText(error, { action: "reset this prompt" })),
   });
 
+  if (prompts.isPending) return <Skeleton active paragraph={{ rows: 6 }} />;
+
   const items = prompts.data?.items ?? [];
 
   return (
-    <Card
-      size="small"
-      title="Summary prompts"
-      loading={prompts.isPending}
-      className="prompt-editor"
-      extra={
-        prompts.data && !prompts.data.from_db ? (
-          <Tag color="warning">PROMPTS_FROM_DB is off — the files are in use</Tag>
-        ) : null
-      }
-    >
-      <Typography.Paragraph type="secondary">
-        These are posted to <Typography.Text code>:8825</Typography.Text> as{" "}
-        <Typography.Text code>prompt_text</Typography.Text>, in full. A saved prompt applies to
-        the next video — no restart. The files in{" "}
-        <Typography.Text code>{prompts.data?.dir ?? "src/prompts"}</Typography.Text> remain the
-        wording this project ships, and Reset puts one back.
-      </Typography.Paragraph>
-
+    <div className="prompt-editor">
       {prompts.error && (
         <Alert
           type="error"
           showIcon
           message="The prompts could not be read"
           description={errorText(prompts.error, { action: "read the prompts" })}
+        />
+      )}
+
+      {/* The one thing that makes every edit below pointless, said once. */}
+      {prompts.data && !prompts.data.from_db && (
+        <Alert
+          type="warning"
+          showIcon
+          message={`PROMPTS_FROM_DB is off — the files in ${prompts.data.dir} are in use, and saving here changes nothing.`}
         />
       )}
 
@@ -117,7 +114,7 @@ export function PromptEditor() {
           ),
         }))}
       />
-    </Card>
+    </div>
   );
 }
 
@@ -152,48 +149,50 @@ function PromptPane({
 
   return (
     <div className="prompt-pane">
-      <Space wrap className="prompt-meta">
-        <Typography.Text type="secondary">
-          {item.file} · {draft.length.toLocaleString()} chars
-          {item.version ? ` · v${item.version}` : ""}
-          {item.updated_at ? ` · saved ${ago(item.updated_at)}` : " · never saved"}
-          {item.updated_by ? ` by ${item.updated_by}` : ""}
-        </Typography.Text>
-        {dirty && <Tag color="warning">unsaved changes</Tag>}
-      </Space>
-
       <Input.TextArea
         value={draft}
         onChange={(event) => onChange(event.target.value)}
-        autoSize={{ minRows: 14, maxRows: 30 }}
+        autoSize={{ minRows: 10, maxRows: 24 }}
         spellCheck={false}
         className="prompt-textarea"
         aria-label={`The ${item.name} prompt`}
       />
 
-      <Space>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          loading={saving}
-          disabled={!dirty || !draft.trim()}
-          onClick={() => onSave(draft)}
-        >
-          Save
-        </Button>
-        <Button disabled={!dirty} onClick={() => onChange(item.text)}>
-          Discard changes
-        </Button>
-        <Popconfirm
-          title="Restore the wording that ships?"
-          description="The text in src/prompts/ replaces what is stored."
-          onConfirm={onReset}
-        >
-          <Button icon={<ReloadOutlined />} loading={resetting} disabled={!item.modified}>
-            Reset to shipped
+      {/* The provenance and the verbs on one line: what this text is, and what
+          can be done to it. Two rows for six words is what made this crowded. */}
+      <div className="prompt-actions">
+        <Typography.Text type="secondary" className="prompt-meta">
+          {item.file} · {draft.length.toLocaleString()} chars
+          {item.version ? ` · v${item.version}` : ""}
+          {item.updated_at ? ` · saved ${ago(item.updated_at)}` : " · never saved"}
+          {item.updated_by ? ` by ${item.updated_by}` : ""}
+          {dirty ? " · unsaved changes" : ""}
+        </Typography.Text>
+
+        <Space>
+          <Button disabled={!dirty} onClick={() => onChange(item.text)}>
+            Discard
           </Button>
-        </Popconfirm>
-      </Space>
+          <Popconfirm
+            title="Restore the wording that ships?"
+            description="The text in src/prompts/ replaces what is stored."
+            onConfirm={onReset}
+          >
+            <Button icon={<ReloadOutlined />} loading={resetting} disabled={!item.modified}>
+              Reset to shipped
+            </Button>
+          </Popconfirm>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            disabled={!dirty || !draft.trim()}
+            onClick={() => onSave(draft)}
+          >
+            Save
+          </Button>
+        </Space>
+      </div>
     </div>
   );
 }

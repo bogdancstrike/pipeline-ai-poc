@@ -1,5 +1,11 @@
 /**
- * The Pipeline page: the wiring, and the two controls that drive it.
+ * The Pipeline page: the prompts, the worker runner, and where the services are.
+ *
+ * The page is three sections in the order somebody reaches for them, with no
+ * cards: it used to be five stacked panels — two of them raw JSON and a
+ * database status nobody came here for — and the two things it is actually for
+ * were buried in the middle. These tests hold that shape, because "cleaned up"
+ * is a state a page drifts out of.
  *
  * The worker runner and the prompt editor both change what the *next* video
  * gets, so they are the two places where a UI mistake costs a run. The prompt
@@ -7,53 +13,80 @@
  */
 import { test, expect } from "../fixtures";
 
-test.describe("the wiring", () => {
+test.describe("the shape of the page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/pipeline");
     await expect(page.getByRole("heading", { name: "Pipeline" })).toBeVisible();
   });
 
-  test("names the five AI services and where they live", async ({ page }) => {
-    const card = page.locator(".ant-card", { hasText: "AI services" });
-
-    for (const service of ["face-match-main", "video-describe-354b", "video-ocr", "transcribe", "summarize"]) {
-      await expect(card.getByRole("cell", { name: service, exact: true })).toBeVisible();
-    }
-    await expect(card).toContainText("172.17.12.80");
+  test("is three sections, in the order they are used", async ({ page }) => {
+    const headings = await page.locator(".pipeline-section-title").allInnerTexts();
+    expect(headings).toEqual(["Summary prompts", "Run one worker", "AI services"]);
   });
 
-  test("says which services are mocked and which are live", async ({ page }) => {
-    const card = page.locator(".ant-card", { hasText: "AI services" });
-    const modes = await card.locator("tbody .ant-tag").allInnerTexts();
+  test("draws no cards at all", async ({ page }) => {
+    // A heading and a rule say what a card's border said, without the box.
+    await expect(page.locator(".ant-card")).toHaveCount(0);
+  });
+
+  test("no longer carries the records database or the Kafka topics", async ({ page }) => {
+    await expect(page.getByText("Records database")).toHaveCount(0);
+    await expect(page.getByText("Kafka topics")).toHaveCount(0);
+    await expect(page.getByText("AI calls stored")).toHaveCount(0);
+  });
+
+  test("has one primary verb, in the header", async ({ page }) => {
+    const primary = page.locator(".page-header button.ant-btn-primary");
+    await expect(primary).toHaveCount(1);
+    await expect(primary).toHaveText(/Analyse a video/);
+  });
+
+  test("each section says what it is for", async ({ page }) => {
+    const notes = await page.locator(".pipeline-section-note").allInnerTexts();
+    expect(notes.join(" ")).toContain(":8825");
+    expect(notes.join(" ")).toContain("Nothing is published to Kafka");
+  });
+});
+
+test.describe("the services", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/pipeline");
+    await expect(page.locator(".service-strip")).toBeVisible();
+  });
+
+  test("names the five, one line each", async ({ page }) => {
+    const names = await page.locator(".service-name").allInnerTexts();
+    expect(names).toEqual([
+      "face-match-main",
+      "video-describe-354b",
+      "video-ocr",
+      "transcribe",
+      "summarize",
+    ]);
+  });
+
+  test("gives each one its address", async ({ page }) => {
+    const urls = await page.locator(".service-url").allInnerTexts();
+    expect(urls).toHaveLength(5);
+    for (const url of urls) expect(url).toMatch(/:\d{4}/);
+    // The scheme is dropped: five identical `http://` prefixes are noise.
+    expect(urls.join(" ")).not.toContain("http://");
+  });
+
+  test("says which are mocked and which are live", async ({ page }) => {
+    const modes = await page.locator(".service-mode").allInnerTexts();
 
     expect(modes).toHaveLength(5);
-    for (const mode of modes) expect(["mocked", "live"]).toContain(mode);
+    for (const mode of modes) expect(["mocked", "live"]).toContain(mode.trim());
   });
 
-  test("reports the records database", async ({ page }) => {
-    const card = page.locator(".ant-card", { hasText: "Records database" });
-
-    await expect(card.getByText("connected")).toBeVisible();
-    await expect(card).toContainText("postgres");
-    await expect(card).toContainText("Records");
-    await expect(card).toContainText("AI calls stored");
-  });
-
-  test("the database password is not on screen", async ({ page }) => {
-    await expect(page.locator(".ant-card", { hasText: "Records database" })).toContainText("***");
-  });
-
-  test("shows the Kafka topics the workers use", async ({ page }) => {
-    const card = page.locator(".ant-card", { hasText: "Kafka topics" });
-    await expect(card.locator(".record-json")).toContainText("video.in");
+  test("the full URL is available without leaving the page", async ({ page }) => {
+    await page.locator(".service-url").first().hover();
+    await expect(page.getByRole("tooltip")).toContainText("http");
   });
 });
 
 test.describe("running one worker", () => {
-  /** The Worker column only — the name also appears in Reads/Writes. */
-  const workerCell = (page, name: string) =>
-    page.locator(".worker-table tbody tr.ant-table-row td:nth-child(2)").filter({ hasText: name });
-
   /** Choose a worker in the runner's select, and close the menu behind it. */
   async function chooseWorker(page, label: string) {
     await page.locator(".worker-runner .ant-select").first().click();
@@ -71,17 +104,28 @@ test.describe("running one worker", () => {
     await expect(page.locator(".worker-runner")).toBeVisible();
   });
 
-  test("lists the seven workers with their topics", async ({ page }) => {
-    const table = page.locator(".worker-table");
-    await expect(table.locator("tbody tr.ant-table-row")).toHaveCount(7);
-
-    const names = await table
-      .locator("tbody tr.ant-table-row td:nth-child(2)")
+  test("the picker offers all seven workers, in pipeline order", async ({ page }) => {
+    await page.locator(".worker-runner .ant-select").first().click();
+    const options = await page
+      .locator(".ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item")
       .allInnerTexts();
-    expect(names).toEqual([
-      "splitter", "face-match-main", "video-describe-354b", "transcribe",
-      "video-ocr", "aggregator-ai-caller", "aggregator",
+
+    expect(options).toEqual([
+      "W1 · splitter",
+      "W2 · face-match-main",
+      "W3 · video-describe-354b",
+      "W4 · transcribe",
+      "W5 · video-ocr",
+      "W6 · aggregator-ai-caller",
+      "W7 · aggregator",
     ]);
+  });
+
+  test("the six-column catalogue under it is gone", async ({ page }) => {
+    // Its Reads and Writes columns were the Kafka topology this page was asked
+    // to stop being about; the rest of what it said is on the picker.
+    await expect(page.locator(".worker-table")).toHaveCount(0);
+    await expect(page.locator(".worker-runner table")).toHaveCount(0);
   });
 
   test("Run is refused until a worker and a path are given", async ({ page }) => {
@@ -95,11 +139,13 @@ test.describe("running one worker", () => {
     await expect(run).toBeEnabled();
   });
 
-  test("a row in the catalogue picks that worker", async ({ page }) => {
-    await workerCell(page, "video-ocr").click();
+  test("the path can be run from the keyboard", async ({ page }) => {
+    await chooseWorker(page, "W2 · face-match-main");
+    await page.locator(".worker-runner").getByPlaceholder("/video/migrants.mp4")
+      .fill("/video/migrants.mp4");
+    await page.locator(".worker-runner").getByPlaceholder("/video/migrants.mp4").press("Enter");
 
-    await expect(page.locator(".worker-runner .ant-select-selection-item").first())
-      .toContainText("video-ocr");
+    await expect(page.locator(".worker-result .record-json")).toBeVisible();
   });
 
   test("running one answers with what it produced", async ({ page }) => {
@@ -115,12 +161,20 @@ test.describe("running one worker", () => {
     await expect(result).toContainText("persons");
   });
 
-  test("the chosen worker says what runs before it, and what is mocked", async ({ page }) => {
+  test("the chosen worker says what runs before it", async ({ page }) => {
     await chooseWorker(page, "W7 · aggregator");
 
     const meta = page.locator(".worker-meta");
-    await expect(meta).toContainText("Chained:");
-    await expect(meta).toContainText("splitter");
+    await expect(meta).toContainText("splitter → face-match-main");
+    await expect(meta).toContainText("→ aggregator");
+  });
+
+  test("a worker that calls a service says whether that call is mocked", async ({ page }) => {
+    // W7 makes no AI calls of its own, so it carries no tags — W2 does.
+    await chooseWorker(page, "W2 · face-match-main");
+
+    const tags = page.locator(".worker-meta .ant-tag");
+    await expect(tags.first()).toContainText(/face-match-main: (mocked|live)/);
   });
 
   test("only the aggregator offers to write the record", async ({ page }) => {
@@ -128,7 +182,7 @@ test.describe("running one worker", () => {
     await chooseWorker(page, "W2 · face-match-main");
     await expect(runner.getByText("Write the record (file + database)")).toHaveCount(0);
 
-    await workerCell(page, "aggregator").last().click();
+    await chooseWorker(page, "W7 · aggregator");
     await expect(runner.getByText("Write the record (file + database)")).toBeVisible();
   });
 
@@ -211,7 +265,8 @@ test.describe("the prompt editor", () => {
     for (const name of ["summary", "entities", "sentiment"]) {
       await expect(editor.getByRole("tab", { name: new RegExp(name) })).toBeVisible();
     }
-    await expect(editor).toContainText("prompt_text");
+    // The file each prompt ships as, on the line under the box.
+    await expect(editor.locator(".ant-tabs-tabpane-active .prompt-meta")).toContainText("summary.txt");
   });
 
   test("the text on screen is the text that will be sent", async ({ page }) => {
@@ -232,7 +287,7 @@ test.describe("the prompt editor", () => {
     const box = editor.getByLabel("The sentiment prompt");
     await box.fill("Answer with one word: POSITIVE, NEUTRAL or NEGATIVE.");
 
-    await expect(editor.getByText("unsaved changes")).toBeVisible();
+    await expect(editor.locator(".ant-tabs-tabpane-active .prompt-meta")).toContainText("unsaved changes");
     await expect(editor.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
@@ -245,10 +300,10 @@ test.describe("the prompt editor", () => {
     const before = await box.inputValue();
     await box.fill("something else entirely");
 
-    await editor.getByRole("button", { name: "Discard changes" }).click();
+    await editor.getByRole("button", { name: "Discard" }).click();
 
     expect(await box.inputValue()).toBe(before);
-    await expect(editor.getByText("unsaved changes")).toHaveCount(0);
+    await expect(editor.locator(".ant-tabs-tabpane-active .prompt-meta")).not.toContainText("unsaved changes");
   });
 
   test("saving one says which version it became", async ({ page }) => {
