@@ -1,6 +1,6 @@
 # Testing
 
-Five suites, one stack, 831 tests. This is what is covered, what it found, and
+Five suites, one stack, 832 tests. This is what is covered, what it found, and
 how to run any of it.
 
 ```
@@ -8,7 +8,7 @@ how to run any of it.
   unit         pytest       396     nothing                     0.4s
   existing     pytest        74     Kafka + Redis for 2 of them 10s
   integration  pytest       177     the compose stack           6s
-  e2e          Playwright   153     the compose stack          52s
+  e2e          Playwright   154     the compose stack          53s
   performance  pytest        19     the compose stack           4s
   load         pytest        12     the compose stack          82s
 ```
@@ -159,7 +159,7 @@ browser talks to one host — and two of the six defects below exist only there.
 | --- | ---: | --- |
 | `shell.spec.ts` | 17 | every route, the sider, dark mode, collapse-and-reload, and each route reached by *pasting* it as well as by navigating to it |
 | `explorer.spec.ts` | 31 | paging, server-side sorting, free text, the facet menus, the record drawer and its three tabs, the permalink |
-| `pipeline.spec.ts` | 29 | the page's three-section shape (and that it draws no cards), the services strip, the worker runner, the analyse modal, the prompt editor's edit/save/discard/reset cycle |
+| `pipeline.spec.ts` | 30 | the page's three-section shape (and that it draws no cards), the services strip, the worker runner, the analyse modal, the prompt editor's edit/save/discard/reset cycle |
 | `record-page.spec.ts` | 15 | the seven panels in pipeline order, the service behind each, the calls and JSON tabs, a failed service shown where its text would have been |
 | `advanced-search.spec.ts` | 13 | building a rule, the draft contract, the live preview count, the condition strip, Clear, nested groups |
 | `saved-searches.spec.ts` | 11 | the whole lifecycle in one serial file, cleaning up after itself |
@@ -431,7 +431,7 @@ timeout, against a topic holding several thousand events from the load runs
 before the burst was capped. It passes in 10–30s against a topic of normal
 size. If it ever times out, the topic is the first place to look.
 
-**Give the E2E suite an idle stack.** It passes 153/153 consistently on its
+**Give the E2E suite an idle stack.** It passes 154/154 consistently on its
 own, in about 50 seconds. Started immediately after the Python suite — while
 the seven workers are still draining the load test's submissions — one run
 reported one test short. Nothing failed; the browser suite simply shares a Flask process

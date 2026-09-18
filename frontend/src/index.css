@@ -299,13 +299,16 @@ body {
 /* ── Pipeline page ──────────────────────────────────────────────────── */
 
 /*
- * Three sections, generously apart, over a column narrow enough to read.
- * A prompt is prose and a worker's answer is JSON; neither is improved by
- * being 1800 pixels wide on the monitor this is usually open on.
+ * Three sections, generously apart, across the whole content area.
+ *
+ * This was capped at 1060px on the reasoning that a prompt is prose and prose
+ * wants a measure. The page is a workbench rather than a document, though: the
+ * prompt box, the path field and the JSON a worker answers with all have more
+ * to say when there is more room, and a column of white space to the right of
+ * a control is not restraint.
  */
 .pipeline {
   gap: 28px;
-  max-width: 1060px;
 }
 
 .pipeline-section {

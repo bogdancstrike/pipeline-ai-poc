@@ -41,6 +41,16 @@ test.describe("the shape of the page", () => {
     await expect(primary).toHaveText(/Analyse a video/);
   });
 
+  test("fills the width it is given", async ({ page }) => {
+    // It was capped at 1060px on the reasoning that prose wants a measure.
+    // The page is a workbench: a column of white space beside a control is not
+    // restraint, and a cap is easy to reintroduce by accident.
+    const section = await page.locator(".pipeline-section").first().boundingBox();
+    const content = await page.locator(".app-content").boundingBox();
+
+    expect(section!.width).toBeGreaterThan(content!.width - 64);
+  });
+
   test("each section says what it is for", async ({ page }) => {
     const notes = await page.locator(".pipeline-section-note").allInnerTexts();
     expect(notes.join(" ")).toContain(":8825");
